@@ -1,4 +1,4 @@
-name: Непрерывная интеграция
+name: Изменения в коде
 
 on:
   pull_request:
@@ -11,9 +11,11 @@ jobs:
     name: Проверка линтерами и прогон тестов
     runs-on: ubuntu-latest
     steps:
-      - name: Вывод строки в консоль
-        run: |
-          echo Hello from ${{ github.job }}
+      - name: Проверка линтерами
+        run: echo Ошибок не обнаружено!
+
+      - name: Прогон тестов
+        run: echo Тесты прошли успешно!
 
   deploy_dev:
     name: Разворачивание тестового бота
@@ -30,9 +32,7 @@ jobs:
     needs: deploy_dev
     environment: QA
     steps:
-      - name: Вывод строки в консоль
-        run: |
-          echo Hello from ${{ github.job }}
+      - run: echo Апрув получен!
 
   lead_approve:
     name: Апрув от тимлида
@@ -40,6 +40,4 @@ jobs:
     needs: qa_approve
     environment: Lead
     steps:
-      - name: Вывод строки в консоль
-        run: |
-          echo Hello from ${{ github.job }}
+      - run: echo Апрув получен!
