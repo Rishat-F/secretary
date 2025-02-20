@@ -10,14 +10,30 @@ jobs:
   lint_and_test:
     name: Проверка линтерами и прогон тестов
     runs-on: ubuntu-latest
+    steps:
+      - name: Вывод строки в консоль
+        run: |
+          echo Hello from lint_and_test ${{ github.job }}
   deploy_dev:
     name: Разворачивание тестового бота
     needs: lint_and_test
+    steps:
+      - name: Вывод строки в консоль
+        run: |
+          echo Hello from lint_and_test ${{ github.job }}
   qa_approve:
     name: Апрув от QA
     needs: deploy_dev
     environment: QA
+    steps:
+      - name: Вывод строки в консоль
+        run: |
+          echo Hello from lint_and_test ${{ github.job }}
   lead_approve:
     name: Апрув от тимлида
     needs: qa_approve
     environment: Lead
+    steps:
+      - name: Вывод строки в консоль
+        run: |
+          echo Hello from lint_and_test ${{ github.job }}
