@@ -1,0 +1,16 @@
+name: Изменения в документации
+
+on:
+  pull_request:
+    branches: [master]
+    paths: ["docs/**"]
+  workflow_dispatch:
+
+jobs:
+  team_approve:
+    name: Апрув от команды
+    runs-on: ubuntu-latest
+    environment: Team
+    steps:
+      - name: Апрув получен!
+        run: exit 0
