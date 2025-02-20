@@ -13,7 +13,8 @@ jobs:
     steps:
       - name: Вывод строки в консоль
         run: |
-          echo Hello from lint_and_test ${{ github.job }}
+          echo Hello from ${{ github.job }}
+
   deploy_dev:
     name: Разворачивание тестового бота
     runs-on: ubuntu-latest
@@ -21,7 +22,8 @@ jobs:
     steps:
       - name: Вывод строки в консоль
         run: |
-          echo Hello from lint_and_test ${{ github.job }}
+          echo Hello from ${{ github.job }}
+
   qa_approve:
     name: Апрув от QA
     runs-on: ubuntu-latest
@@ -30,7 +32,8 @@ jobs:
     steps:
       - name: Вывод строки в консоль
         run: |
-          echo Hello from lint_and_test ${{ github.job }}
+          echo Hello from ${{ github.job }}
+
   lead_approve:
     name: Апрув от тимлида
     runs-on: ubuntu-latest
@@ -39,4 +42,4 @@ jobs:
     steps:
       - name: Вывод строки в консоль
         run: |
-          echo Hello from lint_and_test ${{ github.job }}
+          echo Hello from ${{ github.job }}

@@ -1,0 +1,17 @@
+name: Документация
+
+on:
+  pull_request:
+    branches: [master]
+    paths: ["docs/**"]
+  workflow_dispatch:
+
+jobs:
+  team_approve:
+    name: Апрув от команды
+    runs-on: ubuntu-latest
+    environment: Team
+    steps:
+      - name: Вывод строки в консоль
+        run: |
+          echo Hello from ${{ github.job }}

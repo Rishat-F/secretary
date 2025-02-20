@@ -1,0 +1,17 @@
+name: Изменения в корне репозитория
+
+on:
+  pull_request:
+    branches: [master]
+    paths-ignore: ["code/**", "docs/**"]
+  workflow_dispatch:
+
+jobs:
+  lead_approve:
+    name: Апрув от тимлида
+    runs-on: ubuntu-latest
+    environment: Lead
+    steps:
+      - name: Вывод строки в консоль
+        run: |
+          echo Hello from ${{ github.job }}
