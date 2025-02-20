@@ -1,0 +1,23 @@
+name: Непрерывная интеграция
+
+on:
+  pull_request:
+    branches: [master]
+    paths: ["code/**"]
+  workflow_dispatch:
+
+jobs:
+  lint_and_test:
+    name: Проверка линтерами и прогон тестов
+    runs-on: ubuntu-latest
+  deploy_dev:
+    name: Разворачивание тестового бота
+    needs: lint_and_test
+  qa_approve:
+    name: Апрув от QA
+    needs: deploy_dev
+    environment: QA
+  lead_approve:
+    name: Апрув от тимлида
+    needs: qa_approve
+    environment: Lead
