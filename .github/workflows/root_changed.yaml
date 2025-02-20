@@ -12,6 +12,5 @@ jobs:
     runs-on: ubuntu-latest
     environment: Lead
     steps:
-      - name: Вывод строки в консоль
-        run: |
-          echo Hello from ${{ github.job }}
+      - name: Апрув получен!
+        run: exit 0
