@@ -1,0 +1,17 @@
+x-logging: &logging
+  logging:
+    driver: local
+    options:
+      max-size: 10m
+      max-file: 3
+
+services:
+  bot:
+    restart: always
+    image: secretary_bot
+    build:
+      context: .
+    container_name: secretary_bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+    <<: *logging
