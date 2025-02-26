@@ -6,6 +6,10 @@ on:
     paths: ["code/**"]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint_and_test:
     name: Проверка линтерами и прогон тестов
