@@ -18,3 +18,12 @@ jobs:
     steps:
       - name: Апрув получен!
         run: exit 0
+
+  lead_approve:
+    name: Апрув от тимлида
+    runs-on: ubuntu-latest
+    needs: team_approve
+    environment: Lead
+    steps:
+      - name: Апрув получен!
+        run: exit 0
