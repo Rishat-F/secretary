@@ -1,3 +1,5 @@
+"""ORM модели."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, String
