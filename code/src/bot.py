@@ -10,8 +10,8 @@ from aiogram.enums import ChatType, ParseMode
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from config import db_url
-from handlers import show_id, start_bot
-from keyboards import SHOW_ID
+from handlers import show_id, show_uslugi, start_bot
+from keyboards import SHOW_ID, USLUGI
 from models import Base
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +30,11 @@ def register_handlers(dp: Dispatcher) -> None:
         show_id,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == SHOW_ID.lower(),
+    )
+    dp.message.register(
+        show_uslugi,
+        F.chat.type == ChatType.PRIVATE.value,
+        F.text.lower() == USLUGI.lower(),
     )
 
 
