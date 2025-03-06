@@ -5,6 +5,8 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from constraints import USLUGA_NAME_MAX_LEN
+
 
 constraint_naming_conventions = {
     "ix": "ix_%(column_0_label)s",
@@ -52,7 +54,7 @@ class Usluga(Base):
         comment="Идентификатор услуги",
     )
     name: Mapped[str] = mapped_column(
-        String(100),
+        String(USLUGA_NAME_MAX_LEN),
         nullable=False,
         unique=True,
         comment="Название услуги",
