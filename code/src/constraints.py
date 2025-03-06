@@ -1,0 +1,5 @@
+"""Ограничения."""
+
+
+USLUGA_NAME_MAX_LEN = 100
+DURATION_MULTIPLIER = 30

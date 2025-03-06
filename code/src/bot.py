@@ -10,7 +10,15 @@ from aiogram.enums import ChatType, ParseMode
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from config import ADMIN_TG_ID, db_url
-from handlers import choose_uslugi_action, show_id, start_bot, uslugi
+from handlers import (
+    choose_uslugi_action,
+    set_usluga_duration,
+    set_usluga_name,
+    set_usluga_price,
+    show_id,
+    start_bot,
+    uslugi,
+)
 from keyboards import SHOW_ID, USLUGI
 from models import Base
 from states import UslugiActions
@@ -26,6 +34,24 @@ def register_handlers(dp: Dispatcher) -> None:
         choose_uslugi_action,
         F.chat.id == ADMIN_TG_ID,
         UslugiActions.choose_action,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        set_usluga_name,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.set_name,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        set_usluga_price,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.set_price,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        set_usluga_duration,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.set_duration,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
@@ -55,7 +81,7 @@ async def on_bot_start(engine: AsyncEngine) -> None:
 async def main() -> None:
     """Запуск бота."""
     engine = create_async_engine(db_url, echo=True)
-    async_session = async_sessionmaker(engine)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
     dp.startup.register(on_bot_start)

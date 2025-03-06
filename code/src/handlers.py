@@ -4,12 +4,28 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from exceptions import UslugaNameTooLongError
 import messages
 from config import ADMIN_TG_ID
-from database import get_uslugi
-from keyboards import BACK, SHOW_ALL_USLUGI, main_keyboard, uslugi_keyboard
+from database import get_uslugi, insert_usluga
+from keyboards import (
+    BACK,
+    CREATE,
+    MAIN_MENU,
+    SHOW_ALL_USLUGI,
+    back_keyboard,
+    main_keyboard,
+    uslugi_keyboard,
+)
+from models import Usluga
 from states import UslugiActions
-from utils import form_uslugi_list_text
+from utils import (
+    form_uslugi_list_text,
+    preprocess_text,
+    validate_usluga_duration,
+    validate_usluga_name,
+    validate_usluga_price,
+)
 
 
 async def start_bot(message: types.Message):
@@ -55,5 +71,90 @@ async def choose_uslugi_action(
         await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == SHOW_ALL_USLUGI.upper():
         await _show_uslugi(message, async_session, uslugi_keyboard)
+    elif upper_text == CREATE.upper():
+        await state.set_state(UslugiActions.set_name)
+        await message.answer(messages.SET_USLUGA_NAME, reply_markup=back_keyboard)
     else:
         await message.answer(messages.CHOOSE_GIVEN_ACTION, reply_markup=uslugi_keyboard)
+
+
+async def set_usluga_name(
+    message: types.Message,
+    async_session: async_sessionmaker[AsyncSession],
+    state: FSMContext,
+) -> None:
+    text = preprocess_text(message.text)
+    upper_text = text.upper()
+    if upper_text == BACK.upper():
+        await state.set_state(UslugiActions.choose_action)
+        await message.answer(messages.CHOOSE_ACTION, reply_markup=uslugi_keyboard)
+    elif upper_text == MAIN_MENU.upper():
+        await state.set_data(data={})
+        await state.clear()
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
+    else:
+        try:
+            usluga_name = validate_usluga_name(text)
+        except UslugaNameTooLongError as err:
+            await message.answer(str(err), reply_markup=back_keyboard)
+        else:
+            uslugi = await get_uslugi(async_session, filter_by={"name": usluga_name})
+            if uslugi:
+                await message.answer(
+                    messages.USLUGA_ALREADY_EXISTS.format(name=usluga_name),
+                    reply_markup=back_keyboard,
+                )
+            else:
+                await state.set_data({"name": usluga_name})
+                await state.set_state(UslugiActions.set_price)
+                await message.answer(messages.SET_USLUGA_PRICE, reply_markup=back_keyboard)
+
+
+async def set_usluga_price(message: types.Message, state: FSMContext) -> None:
+    text = message.text.strip()
+    upper_text = text.upper()
+    if upper_text == BACK.upper():
+        await state.set_state(UslugiActions.set_name)
+        await message.answer(messages.SET_USLUGA_NAME, reply_markup=back_keyboard)
+    elif upper_text == MAIN_MENU.upper():
+        await state.clear()
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
+    else:
+        possible_price = validate_usluga_price(text)
+        if isinstance(possible_price, int):
+            await state.update_data({"price": possible_price})
+            await state.set_state(UslugiActions.set_duration)
+            await message.answer(messages.SET_USLUGA_DURATION, reply_markup=back_keyboard)
+        else:
+            error_message = possible_price
+            await message.answer(error_message, reply_markup=back_keyboard)
+
+
+async def set_usluga_duration(
+    message: types.Message,
+    async_session: async_sessionmaker[AsyncSession],
+    state: FSMContext,
+) -> None:
+    text = message.text.strip()
+    upper_text = text.upper()
+    if upper_text == BACK.upper():
+        await state.set_state(UslugiActions.set_price)
+        await message.answer(messages.SET_USLUGA_PRICE, reply_markup=back_keyboard)
+    elif upper_text == MAIN_MENU.upper():
+        await state.clear()
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
+    else:
+        possible_duration = validate_usluga_duration(text)
+        if isinstance(possible_duration, int):
+            data = await state.update_data({"duration": possible_duration})
+            new_usluga = Usluga(**data)
+            await insert_usluga(async_session, new_usluga)
+            await message.answer(
+                messages.USLUGA_CREATED.format(name=new_usluga.name),
+                reply_markup=uslugi_keyboard,
+            )
+            await state.set_state(UslugiActions.choose_action)
+            await state.set_data({})
+        else:
+            error_message = possible_duration
+            await message.answer(error_message, reply_markup=back_keyboard)
