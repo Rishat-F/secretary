@@ -43,9 +43,10 @@ async def _show_uslugi(
     message: types.Message,
     async_session: async_sessionmaker[AsyncSession],
     keyboard: types.ReplyKeyboardMarkup,
+    show_duration: bool,
 ) -> list[Usluga]:
     uslugi = await get_uslugi(async_session)
-    text = form_uslugi_list_text(uslugi)
+    text = form_uslugi_list_text(uslugi, show_duration)
     await message.answer(text, reply_markup=keyboard)
     return uslugi
 
@@ -56,7 +57,7 @@ async def uslugi(
     state: FSMContext,
 ):
     if message.from_user.id != ADMIN_TG_ID:
-        await _show_uslugi(message, async_session, main_keyboard)
+        await _show_uslugi(message, async_session, main_keyboard, show_duration=False)
     else:
         await message.answer(messages.CHOOSE_ACTION, reply_markup=uslugi_keyboard)
         await state.set_state(UslugiActions.choose_action)
@@ -72,13 +73,13 @@ async def choose_uslugi_action(
         await state.clear()
         await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == SHOW_ALL_USLUGI.upper():
-        await _show_uslugi(message, async_session, uslugi_keyboard)
+        await _show_uslugi(message, async_session, uslugi_keyboard, show_duration=True)
     elif upper_text == CREATE.upper():
         await state.set_state(UslugiActions.set_name)
         await message.answer(messages.SET_USLUGA_NAME, reply_markup=back_keyboard)
     elif upper_text == DELETE.upper():
         await state.set_state(UslugiActions.choose_usluga_to_delete)
-        uslugi = await _show_uslugi(message, async_session, back_keyboard)
+        uslugi = await _show_uslugi(message, async_session, back_keyboard, show_duration=True)
         uslugi_to_delete = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
         await state.set_data(uslugi_to_delete)
         await message.answer(messages.CHOOSE_USLUGA_TO_DELETE, reply_markup=back_keyboard)
