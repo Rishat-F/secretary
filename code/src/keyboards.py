@@ -7,6 +7,7 @@ MAIN_MENU = "Главная"
 SHOW_ID = "Вывести ID"
 USLUGI = "Услуги"
 CREATE = "Создать"
+DELETE = "Удалить"
 SHOW_ALL_USLUGI = "Показать все услуги"
 
 
@@ -26,6 +27,7 @@ uslugi_keyboard = ReplyKeyboardMarkup(
         ],
         [
             KeyboardButton(text=CREATE),
+            KeyboardButton(text=DELETE),
         ],
     ],
     resize_keyboard=True,

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 
 from config import ADMIN_TG_ID, db_url
 from handlers import (
+    choose_usluga_to_delete,
     choose_uslugi_action,
     set_usluga_duration,
     set_usluga_name,
@@ -52,6 +53,12 @@ def register_handlers(dp: Dispatcher) -> None:
         set_usluga_duration,
         F.chat.id == ADMIN_TG_ID,
         UslugiActions.set_duration,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_usluga_to_delete,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.choose_usluga_to_delete,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(

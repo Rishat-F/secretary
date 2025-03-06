@@ -10,3 +10,4 @@ class UslugiActions(StatesGroup):
     set_name = State()
     set_price = State()
     set_duration = State()
+    choose_usluga_to_delete = State()
