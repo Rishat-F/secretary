@@ -9,10 +9,11 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ChatType, ParseMode
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-from config import db_url
-from handlers import show_id, show_uslugi, start_bot
+from config import ADMIN_TG_ID, db_url
+from handlers import choose_uslugi_action, show_id, start_bot, uslugi
 from keyboards import SHOW_ID, USLUGI
 from models import Base
+from states import UslugiActions
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,6 +22,12 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 def register_handlers(dp: Dispatcher) -> None:
     """Регистрация обработчиков."""
+    dp.message.register(
+        choose_uslugi_action,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.choose_action,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
     dp.message.register(
         start_bot,
         F.chat.type == ChatType.PRIVATE.value,
@@ -32,7 +39,7 @@ def register_handlers(dp: Dispatcher) -> None:
         F.text.lower() == SHOW_ID.lower(),
     )
     dp.message.register(
-        show_uslugi,
+        uslugi,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == USLUGI.lower(),
     )
