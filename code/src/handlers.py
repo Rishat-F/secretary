@@ -7,10 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from exceptions import UslugaNameTooLongError
 import messages
 from config import ADMIN_TG_ID
-from database import get_uslugi, insert_usluga
+from database import delete_usluga, get_uslugi, insert_usluga
 from keyboards import (
     BACK,
     CREATE,
+    DELETE,
     MAIN_MENU,
     SHOW_ALL_USLUGI,
     back_keyboard,
@@ -42,10 +43,11 @@ async def _show_uslugi(
     message: types.Message,
     async_session: async_sessionmaker[AsyncSession],
     keyboard: types.ReplyKeyboardMarkup,
-) -> None:
+) -> list[Usluga]:
     uslugi = await get_uslugi(async_session)
     text = form_uslugi_list_text(uslugi)
     await message.answer(text, reply_markup=keyboard)
+    return uslugi
 
 
 async def uslugi(
@@ -74,6 +76,12 @@ async def choose_uslugi_action(
     elif upper_text == CREATE.upper():
         await state.set_state(UslugiActions.set_name)
         await message.answer(messages.SET_USLUGA_NAME, reply_markup=back_keyboard)
+    elif upper_text == DELETE.upper():
+        await state.set_state(UslugiActions.choose_usluga_to_delete)
+        uslugi = await _show_uslugi(message, async_session, back_keyboard)
+        uslugi_to_delete = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
+        await state.set_data(uslugi_to_delete)
+        await message.answer(messages.CHOOSE_USLUGA_TO_DELETE, reply_markup=back_keyboard)
     else:
         await message.answer(messages.CHOOSE_GIVEN_ACTION, reply_markup=uslugi_keyboard)
 
@@ -158,3 +166,35 @@ async def set_usluga_duration(
         else:
             error_message = possible_duration
             await message.answer(error_message, reply_markup=back_keyboard)
+
+
+async def choose_usluga_to_delete(
+    message: types.Message,
+    async_session: async_sessionmaker[AsyncSession],
+    state: FSMContext,
+) -> None:
+    text = message.text.strip()
+    upper_text = text.upper()
+    if upper_text == BACK.upper():
+        await state.set_state(UslugiActions.choose_action)
+        await message.answer(messages.CHOOSE_ACTION, reply_markup=uslugi_keyboard)
+    elif upper_text == MAIN_MENU.upper():
+        await state.clear()
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
+    else:
+        uslugi_to_delete = await state.get_data()
+        pos_to_delete = text
+        usluga_name_to_delete = uslugi_to_delete.get(pos_to_delete)
+        if usluga_name_to_delete is None:
+            await message.answer(
+                messages.CHOOSE_USLUGA_TO_DELETE,
+                reply_markup=back_keyboard,
+            )
+        else:
+            await delete_usluga(async_session, usluga_name_to_delete)
+            await state.set_state(UslugiActions.choose_action)
+            await state.set_data({})
+            await message.answer(
+                messages.USLUGA_DELETED.format(name=usluga_name_to_delete),
+                reply_markup=uslugi_keyboard,
+            )

@@ -1,6 +1,6 @@
 """Работа с базой данных."""
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
@@ -26,4 +26,14 @@ async def insert_usluga(
 ) -> None:
     async with async_session() as session:
         session.add(usluga)
+        await session.commit()
+
+
+async def delete_usluga(
+    async_session: async_sessionmaker[AsyncSession],
+    name: str,
+) -> None:
+    async with async_session() as session:
+        query = delete(Usluga).where(Usluga.name==name)
+        await session.execute(query)
         await session.commit()
