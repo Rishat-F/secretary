@@ -15,6 +15,9 @@ PRICE = "Стоимость"
 DURATION = "Длительность"
 UPDATE_ANOTHER_USLUGA = "Изменить другую услугу"
 
+back_button = KeyboardButton(text=BACK)
+main_menu_button = KeyboardButton(text=MAIN_MENU)
+
 
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
@@ -26,10 +29,7 @@ main_keyboard = ReplyKeyboardMarkup(
 
 uslugi_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [
-            KeyboardButton(text=BACK),
-            KeyboardButton(text=SHOW_ALL_USLUGI),
-        ],
+        [back_button, KeyboardButton(text=SHOW_ALL_USLUGI)],
         [
             KeyboardButton(text=CREATE),
             KeyboardButton(text=UPDATE),
@@ -41,10 +41,7 @@ uslugi_keyboard = ReplyKeyboardMarkup(
 
 back_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [
-            KeyboardButton(text=BACK),
-            KeyboardButton(text=MAIN_MENU),
-        ],
+        [back_button, main_menu_button],
     ],
     resize_keyboard=True,
 )
@@ -68,10 +65,7 @@ def _arrange_buttons(
 
 def get_uslugi_to_update_keyboard(names: list[str]) -> ReplyKeyboardMarkup:
     keyboard = [
-        [
-            KeyboardButton(text=BACK),
-            KeyboardButton(text=MAIN_MENU),
-        ],
+        [back_button, main_menu_button],
     ]
     arranged_uslugi_names_buttons = _arrange_buttons(names, buttons_in_row=2)
     keyboard.extend(arranged_uslugi_names_buttons)
@@ -80,10 +74,7 @@ def get_uslugi_to_update_keyboard(names: list[str]) -> ReplyKeyboardMarkup:
 
 usluga_fields_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [
-            KeyboardButton(text=BACK),
-            KeyboardButton(text=MAIN_MENU),
-        ],
+        [back_button, main_menu_button],
         [
             KeyboardButton(text=NAME),
             KeyboardButton(text=PRICE),
@@ -95,10 +86,7 @@ usluga_fields_keyboard = ReplyKeyboardMarkup(
 
 set_usluga_new_field_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [
-            KeyboardButton(text=BACK),
-            KeyboardButton(text=MAIN_MENU),
-        ],
+        [back_button, main_menu_button],
         [
             KeyboardButton(text=UPDATE_ANOTHER_USLUGA),
         ],
