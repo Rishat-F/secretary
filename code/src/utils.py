@@ -12,14 +12,17 @@ from exceptions import UslugaNameTooLongError
 ValidationErrorMessage = str
 
 
+def form_usluga_view(usluga: Usluga, show_duration: bool) -> str:
+    view = f"<b>{usluga.name}</b>\n    <i>Стоимость: {usluga.price} руб.</i>\n"
+    if show_duration:
+        view += f"    <i>Длительность: {usluga.duration} мин.</i>\n"
+    return view
+
+
 def form_uslugi_list_text(uslugi: list[Usluga], show_duration: bool) -> str:
     text = ""
     for pos, usluga in enumerate(uslugi, start=1):
-        text += (
-            f"<b>{pos}. {usluga.name}</b>\n    <i>Стоимость: {usluga.price} руб.</i>\n"
-        )
-        if show_duration:
-            text += f"    <i>Длительность: {usluga.duration} мин.</i>\n"
+        text += f"<b>{pos}.</b> {form_usluga_view(usluga, show_duration)}"
     if not text:
         text = NO_USLUGI
     return text.strip()

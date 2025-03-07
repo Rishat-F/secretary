@@ -11,10 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 
 from config import ADMIN_TG_ID, db_url
 from handlers import (
+    choose_usluga_field_to_update,
     choose_usluga_to_delete,
+    choose_usluga_to_update,
     choose_uslugi_action,
     set_usluga_duration,
     set_usluga_name,
+    set_usluga_new_duration,
+    set_usluga_new_name,
+    set_usluga_new_price,
     set_usluga_price,
     show_id,
     start_bot,
@@ -59,6 +64,36 @@ def register_handlers(dp: Dispatcher) -> None:
         choose_usluga_to_delete,
         F.chat.id == ADMIN_TG_ID,
         UslugiActions.choose_usluga_to_delete,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_usluga_to_update,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.choose_usluga_to_update,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_usluga_field_to_update,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.choose_usluga_field_to_update,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        set_usluga_new_name,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.set_new_name,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        set_usluga_new_price,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.set_new_price,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        set_usluga_new_duration,
+        F.chat.id == ADMIN_TG_ID,
+        UslugiActions.set_new_duration,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(

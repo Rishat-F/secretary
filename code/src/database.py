@@ -1,6 +1,6 @@
 """Работа с базой данных."""
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
@@ -26,6 +26,17 @@ async def insert_usluga(
 ) -> None:
     async with async_session() as session:
         session.add(usluga)
+        await session.commit()
+
+
+async def update_usluga(
+    async_session: async_sessionmaker[AsyncSession],
+    usluga_name: str,
+    new_values: dict,
+) -> None:
+    async with async_session() as session:
+        stmt = update(Usluga).where(Usluga.name == usluga_name).values(**new_values)
+        await session.execute(stmt)
         await session.commit()
 
 
