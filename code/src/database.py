@@ -14,7 +14,7 @@ async def get_uslugi(
     if filter_by is None:
         filter_by = dict()
     async with async_session() as session:
-        query = select(Usluga).filter_by(**filter_by)
+        query = select(Usluga).filter_by(**filter_by).order_by(Usluga.name)
         result = await session.execute(query)
         uslugi = result.scalars().all()
     return list(uslugi)
