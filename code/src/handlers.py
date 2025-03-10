@@ -64,12 +64,12 @@ async def uslugi(
     async_session: async_sessionmaker[AsyncSession],
     state: FSMContext,
 ):
-    if message.from_user.id != ADMIN_TG_ID:
-        uslugi = await get_uslugi(async_session)
-        await _show_uslugi(uslugi, message, main_keyboard, show_duration=False)
-    else:
+    if message.from_user.id == ADMIN_TG_ID:
         await message.answer(messages.CHOOSE_ACTION, reply_markup=uslugi_keyboard)
         await state.set_state(UslugiActions.choose_action)
+    else:
+        uslugi = await get_uslugi(async_session)
+        await _show_uslugi(uslugi, message, main_keyboard, show_duration=False)
 
 
 async def choose_uslugi_action(
