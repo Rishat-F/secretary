@@ -24,24 +24,6 @@ class Base(DeclarativeBase):
     metadata = metadata
 
 
-class Client(Base):
-    __tablename__ = "client"
-    __table_args__ = {"comment": "Клиент (например, тот кого стрижет парикмахер)"}
-
-    client_id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        nullable=False,
-        autoincrement=False,
-        comment="Идентификатор клиента (телеграмм ID)",
-    )
-    username: Mapped[str | None] = mapped_column(
-        String(50),
-        nullable=True,
-        comment="Алиас пользователя в телеграмме",
-    )
-
-
 class Usluga(Base):
     __tablename__ = "usluga"
     __table_args__ = {"comment": "Услуга (например, 'Стрижка модельная')"}
@@ -83,9 +65,9 @@ class Zapis(Base):
         comment="Идентификатор записи",
     )
     client_id: Mapped[int] = mapped_column(
-        ForeignKey("client.client_id", ondelete="RESTRICT"),
+        Integer,
         nullable=False,
-        comment="Идентификатор клиента",
+        comment="Идентификатор клиента (телеграмм ID)",
     )
     usluga_id: Mapped[int | None] = mapped_column(
         ForeignKey("usluga.usluga_id", ondelete="SET NULL"),
