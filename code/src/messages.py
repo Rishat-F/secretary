@@ -58,3 +58,7 @@ ZAPIS_SAVED = (
     "Запись прошла успешно!\nПриходите:\n\n<b>{date}</b>\n    "
     "<i>{start_time}</i> {usluga_name}"
 )
+NEW_ZAPIS_CREATED = (
+    "Новая запись на прием!\n\n<b>{date}</b>\n    "
+    "<i>{start_time} - {end_time}</i> {usluga_name}"
+)

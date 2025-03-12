@@ -2,7 +2,7 @@
 
 from datetime import datetime, time, timedelta
 
-from aiogram import types
+from aiogram import Bot, types
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -709,6 +709,7 @@ async def choose_day_to_zapis(
 
 async def choose_time_to_zapis(
     message: types.Message,
+    bot: Bot,
     async_session: async_sessionmaker[AsyncSession],
     state: FSMContext,
 ) -> None:
@@ -766,4 +767,13 @@ async def choose_time_to_zapis(
                     usluga_name=chosen_usluga.name,
                 ),
                 reply_markup=client_main_keyboard,
+            )
+            await bot.send_message(
+                ADMIN_TG_ID,
+                messages.NEW_ZAPIS_CREATED.format(
+                    date=starts_at.strftime("%d.%m.%Y"),
+                    start_time=starts_at.time().isoformat(timespec="minutes"),
+                    end_time=ends_at.time().isoformat(timespec="minutes"),
+                    usluga_name=chosen_usluga.name,
+                ),
             )
