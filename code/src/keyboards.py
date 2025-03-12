@@ -14,15 +14,24 @@ NAME = "Название"
 PRICE = "Стоимость"
 DURATION = "Длительность"
 UPDATE_ANOTHER_USLUGA = "Изменить другую услугу"
+ZAPIS_NA_PRIEM = "Записаться на прием"
 
 back_button = KeyboardButton(text=BACK)
 main_menu_button = KeyboardButton(text=MAIN_MENU)
 
 
-main_keyboard = ReplyKeyboardMarkup(
+admin_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=SHOW_ID)],
         [KeyboardButton(text=USLUGI)],
+    ],
+    resize_keyboard=True,
+)
+
+client_main_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text=SHOW_ID)],
+        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPIS_NA_PRIEM)],
     ],
     resize_keyboard=True,
 )
@@ -40,6 +49,13 @@ uslugi_keyboard = ReplyKeyboardMarkup(
 )
 
 back_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [back_button],
+    ],
+    resize_keyboard=True,
+)
+
+back_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [back_button, main_menu_button],
     ],
@@ -93,3 +109,41 @@ set_usluga_new_field_keyboard = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True,
 )
+
+
+def get_years_keyboard(years: list[int]) -> ReplyKeyboardMarkup:
+    years_ = [str(year) for year in years]
+    keyboard = [
+        [back_button, main_menu_button],
+    ]
+    arranged_years_buttons = _arrange_buttons(years_, buttons_in_row=2)
+    keyboard.extend(arranged_years_buttons)
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+
+def get_months_keyboard(months: list[str]) -> ReplyKeyboardMarkup:
+    keyboard = [
+        [back_button, main_menu_button],
+    ]
+    arranged_months_buttons = _arrange_buttons(months, buttons_in_row=4)
+    keyboard.extend(arranged_months_buttons)
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+
+def get_days_keyboard(days: list[int]) -> ReplyKeyboardMarkup:
+    days_ = [str(day) for day in days]
+    keyboard = [
+        [back_button, main_menu_button],
+    ]
+    arranged_days_buttons = _arrange_buttons(days_, buttons_in_row=5)
+    keyboard.extend(arranged_days_buttons)
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+
+def get_times_keyboard(times: list[str]) -> ReplyKeyboardMarkup:
+    keyboard = [
+        [back_button, main_menu_button],
+    ]
+    arranged_times_buttons = _arrange_buttons(times, buttons_in_row=4)
+    keyboard.extend(arranged_times_buttons)
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)

@@ -11,10 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 
 from config import ADMIN_TG_ID, db_url
 from handlers import (
+    choose_day_to_zapis,
+    choose_month_to_zapis,
+    choose_time_to_zapis,
     choose_usluga_field_to_update,
     choose_usluga_to_delete,
     choose_usluga_to_update,
+    choose_usluga_to_zapis,
     choose_uslugi_action,
+    choose_year_to_zapis,
     set_usluga_duration,
     set_usluga_name,
     set_usluga_new_duration,
@@ -24,10 +29,11 @@ from handlers import (
     show_id,
     start_bot,
     uslugi,
+    zapis_na_priem,
 )
-from keyboards import SHOW_ID, USLUGI
+from keyboards import SHOW_ID, USLUGI, ZAPIS_NA_PRIEM
 from models import Base
-from states import UslugiActions
+from states import UslugiActions, ZapisNaPriem
 
 logging.basicConfig(level=logging.INFO)
 
@@ -36,6 +42,36 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 def register_handlers(dp: Dispatcher) -> None:
     """Регистрация обработчиков."""
+    dp.message.register(
+        choose_usluga_to_zapis,
+        F.chat.id != ADMIN_TG_ID,
+        ZapisNaPriem.choose_usluga,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_year_to_zapis,
+        F.chat.id != ADMIN_TG_ID,
+        ZapisNaPriem.choose_year,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_month_to_zapis,
+        F.chat.id != ADMIN_TG_ID,
+        ZapisNaPriem.choose_month,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_day_to_zapis,
+        F.chat.id != ADMIN_TG_ID,
+        ZapisNaPriem.choose_day,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
+    dp.message.register(
+        choose_time_to_zapis,
+        F.chat.id != ADMIN_TG_ID,
+        ZapisNaPriem.choose_time,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
     dp.message.register(
         choose_uslugi_action,
         F.chat.id == ADMIN_TG_ID,
@@ -110,6 +146,12 @@ def register_handlers(dp: Dispatcher) -> None:
         uslugi,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == USLUGI.lower(),
+    )
+    dp.message.register(
+        zapis_na_priem,
+        F.chat.id != ADMIN_TG_ID,
+        F.chat.type == ChatType.PRIVATE.value,
+        F.text.lower() == ZAPIS_NA_PRIEM.lower(),
     )
 
 

@@ -44,3 +44,17 @@ USLUGA_NEW_DURATION_SETTLED = (
 
 CHOOSE_USLUGA_TO_DELETE = "Введите порядковый номер услуги, которую хотите удалить"
 USLUGA_DELETED = 'Услуга <b>"{name}"</b> удалена!'
+
+CHOOSE_USLUGA_TO_ZAPIS = "Введите порядковый номер услуги, на которую хотите записаться"
+CHOOSE_YEAR = "Выберите год"
+CHOOSE_GIVEN_YEAR = "Выберите год из предложенных"
+CHOOSE_MONTH = "Выберите месяц"
+CHOOSE_GIVEN_MONTH = "Выберите месяц из предложенных"
+CHOOSE_DAY = "Выберите число"
+CHOOSE_GIVEN_DAY = "Выберите число из предложенных"
+CHOOSE_TIME = "Выберите время, на которое хотите записаться"
+CHOOSE_GIVEN_TIME = "Выберите время из предложенных"
+ZAPIS_SAVED = (
+    "Запись прошла успешно!\nПриходите:\n\n<b>{date}</b>\n    "
+    "<i>{start_time}</i> {usluga_name}"
+)

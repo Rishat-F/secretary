@@ -4,7 +4,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
-from models import Usluga
+from models import Usluga, Zapis
 
 
 async def get_uslugi(
@@ -47,4 +47,13 @@ async def delete_usluga(
     async with async_session() as session:
         query = delete(Usluga).where(Usluga.name==name)
         await session.execute(query)
+        await session.commit()
+
+
+async def insert_zapis(
+    async_session: async_sessionmaker[AsyncSession],
+    zapis: Zapis,
+) -> None:
+    async with async_session() as session:
+        session.add(zapis)
         await session.commit()

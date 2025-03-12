@@ -1,6 +1,8 @@
 """Вспомогательные функции."""
 
 import re
+from calendar import Calendar
+from datetime import date
 
 from constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
 from messages import NO_USLUGI
@@ -69,3 +71,69 @@ def validate_usluga_duration(duration_input: str) -> int | ValidationErrorMessag
     if (duration % DURATION_MULTIPLIER) != 0:
         return DURATION_MUST_BE_A_MULTIPLE_OF_N
     return duration
+
+
+_months = {
+    1: "Январь",
+    2: "Февраль",
+    3: "Март",
+    4: "Апрель",
+    5: "Май",
+    6: "Июнь",
+    7: "Июль",
+    8: "Август",
+    9: "Сентябрь",
+    10: "Октябрь",
+    11: "Ноябрь",
+    12: "Декабрь",
+}
+months_swapped = {value: key for key, value in _months.items()}
+
+
+def get_months(year: int) -> list[str]:
+    today = date.today()
+    if year == today.year:
+        current_month_num = today.month
+        result = []
+        for num, name in _months.items():
+            if num >= current_month_num:
+                result.append(name)
+        return result
+    else:
+        return list(_months.values())
+
+
+def get_days(year: int, month: str) -> list[int]:
+    month_num = months_swapped[month]
+    today = date.today()
+    calendar = Calendar()
+    if month_num == today.month:
+        days = [
+            number for number in calendar.itermonthdays(year, month_num)
+            if (number != 0 and number >= today.day)
+        ]
+    else:
+        days = [
+            number for number in calendar.itermonthdays(year, month_num)
+            if number != 0
+        ]
+    return days
+
+
+def get_available_times(*_) -> list[str]:
+    all_times = [
+        "00:00", "00:30", "01:00", "01:30",
+        "02:00", "02:30", "03:00", "03:30",
+        "04:00", "04:30", "05:00", "05:30",
+        "06:00", "06:30", "07:00", "07:30",
+        "08:00", "08:30", "09:00", "09:30",
+        "10:00", "10:30", "11:00", "11:30",
+        "12:00", "12:30", "13:00", "13:30",
+        "14:00", "14:30", "15:00", "15:30",
+        "16:00", "16:30", "17:00", "17:30",
+        "18:00", "18:30", "19:00", "19:30",
+        "20:00", "20:30", "21:00", "21:30",
+        "22:00", "22:30", "23:00", "23:30",
+    ]
+    available_times = all_times
+    return available_times
