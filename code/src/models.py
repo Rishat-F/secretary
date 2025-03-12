@@ -46,7 +46,7 @@ class Usluga(Base):
         nullable=False,
         comment="Стоимость услуги",
     )
-    duration: Mapped[str] = mapped_column(
+    duration: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         comment="Длительность предоставления услуги (в минутах, должно быть кратно 30)",
