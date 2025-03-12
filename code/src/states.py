@@ -16,3 +16,13 @@ class UslugiActions(StatesGroup):
     set_new_price = State()
     set_new_duration = State()
     choose_usluga_to_delete = State()
+
+
+class ZapisNaPriem(StatesGroup):
+    """Конечный автомат состояний записи на прием."""
+
+    choose_usluga = State()
+    choose_year = State()
+    choose_month = State()
+    choose_day = State()
+    choose_time = State()
