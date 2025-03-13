@@ -27,12 +27,11 @@ from handlers import (
     set_usluga_new_name,
     set_usluga_new_price,
     set_usluga_price,
-    show_id,
     start_bot,
     uslugi,
     zapisi,
 )
-from keyboards import SHOW_ID, USLUGI, ZAPISI
+from keyboards import USLUGI, ZAPISI
 from models import Base
 from states import UslugiActions, ZapisNaPriem
 
@@ -143,11 +142,6 @@ def register_handlers(dp: Dispatcher) -> None:
         start_bot,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower().contains("/start"),
-    )
-    dp.message.register(
-        show_id,
-        F.chat.type == ChatType.PRIVATE.value,
-        F.text.lower() == SHOW_ID.lower(),
     )
     dp.message.register(
         uslugi,
