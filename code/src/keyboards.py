@@ -21,14 +21,7 @@ back_button = KeyboardButton(text=BACK)
 main_menu_button = KeyboardButton(text=MAIN_MENU)
 
 
-admin_main_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
-    ],
-    resize_keyboard=True,
-)
-
-client_main_keyboard = ReplyKeyboardMarkup(
+main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
     ],
