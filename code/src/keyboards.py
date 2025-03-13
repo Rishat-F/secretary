@@ -4,7 +4,6 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 BACK = "Назад"
 MAIN_MENU = "Главная"
-SHOW_ID = "Вывести ID"
 USLUGI = "Услуги"
 CREATE = "Создать"
 UPDATE = "Изменить"
@@ -24,7 +23,6 @@ main_menu_button = KeyboardButton(text=MAIN_MENU)
 
 admin_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text=SHOW_ID)],
         [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
     ],
     resize_keyboard=True,
@@ -32,7 +30,6 @@ admin_main_keyboard = ReplyKeyboardMarkup(
 
 client_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text=SHOW_ID)],
         [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
     ],
     resize_keyboard=True,

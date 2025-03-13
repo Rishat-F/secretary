@@ -70,16 +70,6 @@ async def start_bot(message: types.Message):
     await message.answer(messages.GREETING, reply_markup=main_keyboard)
 
 
-async def show_id(message: types.Message):
-    if message.from_user.id == ADMIN_TG_ID:
-        main_keyboard = admin_main_keyboard
-    else:
-        main_keyboard = client_main_keyboard
-    await message.answer(
-        messages.YOUR_ID.format(id=message.from_user.id), reply_markup=main_keyboard
-    )
-
-
 async def _show_uslugi(
     uslugi: list[Usluga],
     message: types.Message,
