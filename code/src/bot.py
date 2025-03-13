@@ -164,7 +164,7 @@ async def on_bot_start(engine: AsyncEngine) -> None:
 
 async def main() -> None:
     """Запуск бота."""
-    engine = create_async_engine(db_url, echo=True)
+    engine = create_async_engine(db_url)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
