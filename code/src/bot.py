@@ -20,6 +20,7 @@ from handlers import (
     choose_usluga_to_zapis,
     choose_uslugi_action,
     choose_year_to_zapis,
+    choose_zapisi_action,
     set_usluga_duration,
     set_usluga_name,
     set_usluga_new_duration,
@@ -29,9 +30,9 @@ from handlers import (
     show_id,
     start_bot,
     uslugi,
-    zapis_na_priem,
+    zapisi,
 )
-from keyboards import SHOW_ID, USLUGI, ZAPIS_NA_PRIEM
+from keyboards import SHOW_ID, USLUGI, ZAPISI
 from models import Base
 from states import UslugiActions, ZapisNaPriem
 
@@ -42,6 +43,12 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 def register_handlers(dp: Dispatcher) -> None:
     """Регистрация обработчиков."""
+    dp.message.register(
+        choose_zapisi_action,
+        F.chat.id != ADMIN_TG_ID,
+        ZapisNaPriem.choose_action,
+        F.chat.type == ChatType.PRIVATE.value,
+    )
     dp.message.register(
         choose_usluga_to_zapis,
         F.chat.id != ADMIN_TG_ID,
@@ -148,10 +155,9 @@ def register_handlers(dp: Dispatcher) -> None:
         F.text.lower() == USLUGI.lower(),
     )
     dp.message.register(
-        zapis_na_priem,
-        F.chat.id != ADMIN_TG_ID,
+        zapisi,
         F.chat.type == ChatType.PRIVATE.value,
-        F.text.lower() == ZAPIS_NA_PRIEM.lower(),
+        F.text.lower() == ZAPISI.lower(),
     )
 
 

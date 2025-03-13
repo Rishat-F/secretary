@@ -5,8 +5,8 @@ from calendar import Calendar
 from datetime import date
 
 from constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
-from messages import NO_USLUGI
-from models import Usluga
+from messages import NO_USLUGI, NO_ZAPISI_FOR_ADMIN, NO_ZAPISI_FOR_CLIENT
+from models import Usluga, Zapis
 
 from exceptions import UslugaNameTooLongError
 
@@ -137,3 +137,38 @@ def get_available_times(*_) -> list[str]:
     ]
     available_times = all_times
     return available_times
+
+
+def form_zapis_view(zapis: Zapis, with_date: bool, for_admin: bool) -> str:
+    view = ""
+    if with_date:
+        date_ = zapis.starts_at.strftime("%d.%m.%Y")
+        view += f"<b>{date_}</b>\n"
+    start_time = zapis.starts_at.strftime("%H:%M")
+    if for_admin:
+        end_time = zapis.ends_at.strftime("%H:%M")
+        view += f"    <i>{start_time} - {end_time}</i>  {zapis.usluga.name}\n"
+    else:
+        view += f"    <i>{start_time}</i>  {zapis.usluga.name}\n"
+    return view
+
+
+def form_zapisi_list_text(zapisi: list[Zapis], for_admin: bool) -> str:
+    zapisi_dict = dict()
+    for zapis in zapisi:
+        date_ = zapis.starts_at.strftime("%d.%m.%Y")
+        if date_ in zapisi_dict:
+            zapisi_dict[date_].append(zapis)
+        else:
+            zapisi_dict[date_] = [zapis]
+    text = ""
+    for date_, zapisi_ in zapisi_dict.items():
+        text += f"<b>{date_}</b>\n"
+        for zapis in zapisi_:
+            text += f"{form_zapis_view(zapis, with_date=False, for_admin=for_admin)}"
+    if not text:
+        if for_admin:
+            text = NO_ZAPISI_FOR_ADMIN
+        else:
+            text = NO_ZAPISI_FOR_CLIENT
+    return text.strip()

@@ -12,6 +12,7 @@ from config import ADMIN_TG_ID
 from database import (
     delete_usluga,
     get_uslugi,
+    get_active_zapisi,
     insert_usluga,
     insert_zapis,
     update_usluga,
@@ -24,9 +25,11 @@ from keyboards import (
     MAIN_MENU,
     NAME,
     PRICE,
+    SHOW_ACTIVE_ZAPISI,
     SHOW_ALL_USLUGI,
     UPDATE,
     UPDATE_ANOTHER_USLUGA,
+    ZAPIS_NA_PRIEM,
     admin_main_keyboard,
     back_keyboard,
     back_main_keyboard,
@@ -39,12 +42,15 @@ from keyboards import (
     set_usluga_new_field_keyboard,
     usluga_fields_keyboard,
     uslugi_keyboard,
+    zapisi_keyboard,
 )
 from models import Usluga, Zapis
 from states import UslugiActions, ZapisNaPriem
 from utils import (
     form_usluga_view,
     form_uslugi_list_text,
+    form_zapis_view,
+    form_zapisi_list_text,
     get_available_times,
     get_days,
     get_months,
@@ -523,26 +529,57 @@ async def set_usluga_new_duration(
             await message.answer(error_message, reply_markup=set_usluga_new_field_keyboard)
 
 
-async def zapis_na_priem(
+async def zapisi(
     message: types.Message,
     async_session: async_sessionmaker[AsyncSession],
     state: FSMContext,
 ) -> None:
-    uslugi = await get_uslugi(async_session)
-    if not uslugi:
-        await message.answer(messages.NO_USLUGI, keyboard=client_main_keyboard)
+    if message.from_user.id == ADMIN_TG_ID:
+        zapisi = await get_active_zapisi(async_session)
+        text = form_zapisi_list_text(zapisi, for_admin=True)
+        await message.answer(text, reply_markup=admin_main_keyboard)
     else:
-        uslugi_na_zapis = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
-        await state.set_data({"uslugi_na_zapis": uslugi_na_zapis})
-        await state.set_state(ZapisNaPriem.choose_usluga)
-        await _show_uslugi(uslugi, message, back_keyboard, show_duration=False)
-        await message.answer(messages.CHOOSE_USLUGA_TO_ZAPIS, reply_markup=back_keyboard)
+        await state.set_state(ZapisNaPriem.choose_action)
+        await message.answer(messages.CHOOSE_ACTION, reply_markup=zapisi_keyboard)
+
+
+async def choose_zapisi_action(
+    message: types.Message,
+    async_session: async_sessionmaker[AsyncSession],
+    state: FSMContext,
+) -> None:
+    upper_text = message.text.upper()
+    if upper_text == BACK.upper():
+        await state.clear()
+        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+    elif upper_text == ZAPIS_NA_PRIEM.upper():
+        uslugi = await get_uslugi(async_session)
+        if not uslugi:
+            await message.answer(messages.NO_USLUGI, keyboard=zapisi_keyboard)
+        else:
+            uslugi_na_zapis = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
+            await state.set_data({"uslugi_na_zapis": uslugi_na_zapis})
+            await state.set_state(ZapisNaPriem.choose_usluga)
+            await _show_uslugi(uslugi, message, back_main_keyboard, show_duration=False)
+            await message.answer(messages.CHOOSE_USLUGA_TO_ZAPIS, reply_markup=back_main_keyboard)
+    elif upper_text == SHOW_ACTIVE_ZAPISI.upper():
+        zapisi = await get_active_zapisi(
+            async_session,
+            filter_by={"client_id": message.from_user.id},
+        )
+        text = form_zapisi_list_text(zapisi, for_admin=False)
+        await message.answer(text, reply_markup=zapisi_keyboard)
+    else:
+        await message.answer(messages.CHOOSE_GIVEN_ACTION, reply_markup=zapisi_keyboard)
 
 
 async def choose_usluga_to_zapis(message: types.Message, state: FSMContext) -> None:
     text = message.text.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
+        await state.set_state(ZapisNaPriem.choose_action)
+        await message.answer(messages.MAIN_MENU, reply_markup=zapisi_keyboard)
+    elif upper_text == MAIN_MENU.upper():
         await state.clear()
         await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
     else:
@@ -759,21 +796,17 @@ async def choose_time_to_zapis(
                 ends_at=ends_at,
             )
             await insert_zapis(async_session, zapis)
-            await state.clear()
+            await state.set_state(ZapisNaPriem.choose_action)
+            await state.set_data({})
             await message.answer(
                 messages.ZAPIS_SAVED.format(
-                    date=starts_at.strftime("%d.%m.%Y"),
-                    start_time=starts_at.time().isoformat(timespec="minutes"),
-                    usluga_name=chosen_usluga.name,
+                    zapis_view=form_zapis_view(zapis, with_date=True, for_admin=False),
                 ),
-                reply_markup=client_main_keyboard,
+                reply_markup=zapisi_keyboard,
             )
             await bot.send_message(
                 ADMIN_TG_ID,
                 messages.NEW_ZAPIS_CREATED.format(
-                    date=starts_at.strftime("%d.%m.%Y"),
-                    start_time=starts_at.time().isoformat(timespec="minutes"),
-                    end_time=ends_at.time().isoformat(timespec="minutes"),
-                    usluga_name=chosen_usluga.name,
+                    zapis_view=form_zapis_view(zapis, with_date=True, for_admin=True),
                 ),
             )
