@@ -30,15 +30,14 @@ from keyboards import (
     UPDATE,
     UPDATE_ANOTHER_USLUGA,
     ZAPIS_NA_PRIEM,
-    admin_main_keyboard,
     back_keyboard,
     back_main_keyboard,
-    client_main_keyboard,
     get_days_keyboard,
     get_months_keyboard,
     get_times_keyboard,
     get_uslugi_to_update_keyboard,
     get_years_keyboard,
+    main_keyboard,
     set_usluga_new_field_keyboard,
     usluga_fields_keyboard,
     uslugi_keyboard,
@@ -63,10 +62,6 @@ from utils import (
 
 
 async def start_bot(message: types.Message):
-    if message.from_user.id == ADMIN_TG_ID:
-        main_keyboard = admin_main_keyboard
-    else:
-        main_keyboard = client_main_keyboard
     await message.answer(messages.GREETING, reply_markup=main_keyboard)
 
 
@@ -91,7 +86,7 @@ async def uslugi(
         await state.set_state(UslugiActions.choose_action)
     else:
         uslugi = await get_uslugi(async_session)
-        await _show_uslugi(uslugi, message, client_main_keyboard, show_duration=False)
+        await _show_uslugi(uslugi, message, main_keyboard, show_duration=False)
 
 
 async def choose_uslugi_action(
@@ -102,7 +97,7 @@ async def choose_uslugi_action(
     upper_text = message.text.upper()
     if upper_text == BACK.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == SHOW_ALL_USLUGI.upper():
         uslugi = await get_uslugi(async_session)
         await _show_uslugi(uslugi, message, uslugi_keyboard, show_duration=True)
@@ -148,7 +143,7 @@ async def set_usluga_name(
     elif upper_text == MAIN_MENU.upper():
         await state.set_data(data={})
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         try:
             usluga_name = validate_usluga_name(text)
@@ -175,7 +170,7 @@ async def set_usluga_price(message: types.Message, state: FSMContext) -> None:
         await message.answer(messages.SET_USLUGA_NAME, reply_markup=back_main_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         possible_price = validate_usluga_price(text)
         if isinstance(possible_price, int):
@@ -199,7 +194,7 @@ async def set_usluga_duration(
         await message.answer(messages.SET_USLUGA_PRICE, reply_markup=back_main_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         possible_duration = validate_usluga_duration(text)
         if isinstance(possible_duration, int):
@@ -229,7 +224,7 @@ async def choose_usluga_to_delete(
         await message.answer(messages.CHOOSE_ACTION, reply_markup=uslugi_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         uslugi_to_delete = await state.get_data()
         pos_to_delete = text
@@ -263,7 +258,7 @@ async def choose_usluga_to_update(
         await message.answer(messages.CHOOSE_ACTION, reply_markup=uslugi_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif text in uslugi_names:
         [chosen_usluga] = await get_uslugi(async_session, filter_by={"name": text})
         await state.set_state(UslugiActions.choose_usluga_field_to_update)
@@ -305,7 +300,7 @@ async def choose_usluga_field_to_update(
         )
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text in NAME.upper():
         await state.set_state(UslugiActions.set_new_name)
         await message.answer(
@@ -355,7 +350,7 @@ async def set_usluga_new_name(
         await message.answer(answer, reply_markup=usluga_fields_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == UPDATE_ANOTHER_USLUGA.upper():
         await state.set_state(UslugiActions.choose_usluga_to_update)
         await message.answer(
@@ -422,7 +417,7 @@ async def set_usluga_new_price(
         await message.answer(answer, reply_markup=usluga_fields_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == UPDATE_ANOTHER_USLUGA.upper():
         await state.set_state(UslugiActions.choose_usluga_to_update)
         await message.answer(
@@ -483,7 +478,7 @@ async def set_usluga_new_duration(
         await message.answer(answer, reply_markup=usluga_fields_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=admin_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == UPDATE_ANOTHER_USLUGA.upper():
         await state.set_state(UslugiActions.choose_usluga_to_update)
         await message.answer(
@@ -527,7 +522,7 @@ async def zapisi(
     if message.from_user.id == ADMIN_TG_ID:
         zapisi = await get_active_zapisi(async_session)
         text = form_zapisi_list_text(zapisi, for_admin=True)
-        await message.answer(text, reply_markup=admin_main_keyboard)
+        await message.answer(text, reply_markup=main_keyboard)
     else:
         await state.set_state(ZapisNaPriem.choose_action)
         await message.answer(messages.CHOOSE_ACTION, reply_markup=zapisi_keyboard)
@@ -541,7 +536,7 @@ async def choose_zapisi_action(
     upper_text = message.text.upper()
     if upper_text == BACK.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     elif upper_text == ZAPIS_NA_PRIEM.upper():
         uslugi = await get_uslugi(async_session)
         if not uslugi:
@@ -571,7 +566,7 @@ async def choose_usluga_to_zapis(message: types.Message, state: FSMContext) -> N
         await message.answer(messages.MAIN_MENU, reply_markup=zapisi_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         data = await state.get_data()
         uslugi_to_zapis = data["uslugi_na_zapis"]
@@ -609,7 +604,7 @@ async def choose_year_to_zapis(
         uslugi = await get_uslugi(async_session)
         if not uslugi:
             await state.clear()
-            await message.answer(messages.NO_USLUGI, keyboard=client_main_keyboard)
+            await message.answer(messages.NO_USLUGI, keyboard=main_keyboard)
         else:
             uslugi_na_zapis = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
             await state.set_data({"uslugi_na_zapis": uslugi_na_zapis})
@@ -618,7 +613,7 @@ async def choose_year_to_zapis(
             await message.answer(messages.CHOOSE_USLUGA_TO_ZAPIS, reply_markup=back_keyboard)
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         data = await state.get_data()
         years_to_choose = data["years_to_choose"]
@@ -657,7 +652,7 @@ async def choose_month_to_zapis(message: types.Message, state: FSMContext) -> No
         )
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         data = await state.get_data()
         months_to_choose = data["months_to_choose"]
@@ -701,7 +696,7 @@ async def choose_day_to_zapis(
         )
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         data = await state.get_data()
         days_to_choose = data["days_to_choose"]
@@ -755,7 +750,7 @@ async def choose_time_to_zapis(
         )
     elif upper_text == MAIN_MENU.upper():
         await state.clear()
-        await message.answer(messages.MAIN_MENU, reply_markup=client_main_keyboard)
+        await message.answer(messages.MAIN_MENU, reply_markup=main_keyboard)
     else:
         times_to_choose = data["times_to_choose"]
         if text not in times_to_choose:
