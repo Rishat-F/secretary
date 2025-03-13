@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from constraints import USLUGA_NAME_MAX_LEN
 
@@ -52,6 +52,8 @@ class Usluga(Base):
         comment="Длительность предоставления услуги (в минутах, должно быть кратно 30)",
     )
 
+    zapisi: Mapped[list["Zapis"]] = relationship(back_populates="usluga")
+
 
 class Zapis(Base):
     __tablename__ = "zapis"
@@ -84,3 +86,5 @@ class Zapis(Base):
         nullable=False,
         comment="Дата и время окончания приема (должно быть кратно 30 минутам)",
     )
+
+    usluga: Mapped["Usluga"] = relationship(back_populates="zapisi", lazy="joined")

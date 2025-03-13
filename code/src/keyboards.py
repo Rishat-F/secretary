@@ -14,7 +14,9 @@ NAME = "Название"
 PRICE = "Стоимость"
 DURATION = "Длительность"
 UPDATE_ANOTHER_USLUGA = "Изменить другую услугу"
+ZAPISI = "Записи"
 ZAPIS_NA_PRIEM = "Записаться на прием"
+SHOW_ACTIVE_ZAPISI = "Ваши записи"
 
 back_button = KeyboardButton(text=BACK)
 main_menu_button = KeyboardButton(text=MAIN_MENU)
@@ -23,7 +25,7 @@ main_menu_button = KeyboardButton(text=MAIN_MENU)
 admin_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=SHOW_ID)],
-        [KeyboardButton(text=USLUGI)],
+        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
     ],
     resize_keyboard=True,
 )
@@ -31,7 +33,7 @@ admin_main_keyboard = ReplyKeyboardMarkup(
 client_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=SHOW_ID)],
-        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPIS_NA_PRIEM)],
+        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
     ],
     resize_keyboard=True,
 )
@@ -147,3 +149,15 @@ def get_times_keyboard(times: list[str]) -> ReplyKeyboardMarkup:
     arranged_times_buttons = _arrange_buttons(times, buttons_in_row=4)
     keyboard.extend(arranged_times_buttons)
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+
+zapisi_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [back_button],
+        [
+            KeyboardButton(text=ZAPIS_NA_PRIEM),
+            KeyboardButton(text=SHOW_ACTIVE_ZAPISI),
+        ],
+    ],
+    resize_keyboard=True,
+)

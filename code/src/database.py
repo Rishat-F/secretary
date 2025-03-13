@@ -1,5 +1,7 @@
 """Работа с базой данных."""
 
+from datetime import datetime
+
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -48,6 +50,24 @@ async def delete_usluga(
         query = delete(Usluga).where(Usluga.name==name)
         await session.execute(query)
         await session.commit()
+
+
+async def get_active_zapisi(
+    async_session: async_sessionmaker[AsyncSession],
+    filter_by: dict | None = None,
+) -> list[Zapis]:
+    if filter_by is None:
+        filter_by = dict()
+    async with async_session() as session:
+        query = (
+            select(Zapis)
+            .filter_by(**filter_by)
+            .where(Zapis.starts_at > datetime.now())
+            .order_by(Zapis.starts_at)
+        )
+        result = await session.execute(query)
+        zapisi = result.scalars().all()
+    return list(zapisi)
 
 
 async def insert_zapis(

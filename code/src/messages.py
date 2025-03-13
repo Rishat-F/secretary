@@ -3,6 +3,8 @@
 GREETING = "Здравствуйте!\nНужно придумать приветствие"
 YOUR_ID = "Ваш ID:\n<b>{id}</b>"
 NO_USLUGI = "На данный момент никаких услуг нет"
+NO_ZAPISI_FOR_ADMIN = "На данный момент никаких записей нет"
+NO_ZAPISI_FOR_CLIENT = "У вас пока нет активных записей"
 CHOOSE_ACTION = "Выберите действие"
 CHOOSE_GIVEN_ACTION = "Выберите действие из предложенных"
 MAIN_MENU = "Главное меню"
@@ -54,11 +56,5 @@ CHOOSE_DAY = "Выберите число"
 CHOOSE_GIVEN_DAY = "Выберите число из предложенных"
 CHOOSE_TIME = "Выберите время, на которое хотите записаться"
 CHOOSE_GIVEN_TIME = "Выберите время из предложенных"
-ZAPIS_SAVED = (
-    "Запись прошла успешно!\nПриходите:\n\n<b>{date}</b>\n    "
-    "<i>{start_time}</i> {usluga_name}"
-)
-NEW_ZAPIS_CREATED = (
-    "Новая запись на прием!\n\n<b>{date}</b>\n    "
-    "<i>{start_time} - {end_time}</i> {usluga_name}"
-)
+ZAPIS_SAVED = "Запись прошла успешно!\nПриходите:\n\n{zapis_view}"
+NEW_ZAPIS_CREATED = "Новая запись на прием!\n\n{zapis_view}"
