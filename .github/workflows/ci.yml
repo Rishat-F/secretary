@@ -22,7 +22,6 @@ jobs:
           filters: |
             code:
               - '*'
-              - '**/*'
               - '!docs/**'
               - '!REAMDE.md'
             docs:
