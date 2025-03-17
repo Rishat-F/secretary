@@ -20,7 +20,6 @@
 Без использования докера:
 
 ```console
-cd code
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -30,7 +29,6 @@ python src/bot.py
 С использованием докера:
 
 ```console
-cd code
 docker compose up
 ```
 
