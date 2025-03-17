@@ -13,7 +13,7 @@ jobs:
     name: Определение где произошло изменение
     runs-on: ubuntu-latest
     outputs:
-      src: ${{ steps.filter.outputs.code }}
+      src: ${{ steps.filter.outputs.src }}
       docs: ${{ steps.filter.outputs.docs }}
       deploy: ${{ steps.filter.outputs.deploy }}
     steps:
