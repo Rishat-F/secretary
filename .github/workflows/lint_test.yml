@@ -27,7 +27,7 @@ jobs:
           pip install -r code/requirements.txt -r code/requirements_dev.txt
 
       - name: Проверка линтерами
-        run: ruff check code
+        run: make lint
 
       - name: Прогон тестов
         run: exit 0
