@@ -8,4 +8,4 @@ secretary_down:
 
 .PHONY: lint
 lint:
-	ruff check
+	ruff check src
