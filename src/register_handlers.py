@@ -1,7 +1,6 @@
 from aiogram import Dispatcher, F
 from aiogram.enums import ChatType
 
-from config import ADMIN_TG_ID
 from handlers import (
     choose_day_to_zapis,
     choose_month_to_zapis,
@@ -24,6 +23,7 @@ from handlers import (
     zapisi,
 )
 from keyboards import USLUGI, ZAPISI
+from secrets import ADMIN_TG_ID
 from states import UslugiActions, ZapisNaPriem
 
 
