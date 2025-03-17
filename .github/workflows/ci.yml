@@ -26,9 +26,11 @@ jobs:
             docs:
               - 'docs/**'
             root:
+              - '*'
               - '!src/**'
               - '!docs/**'
               - '!README.md'
+          predicate-quantifier: 'every'
 
   lint_and_test:
     name: Линтеры и тесты
