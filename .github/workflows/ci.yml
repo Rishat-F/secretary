@@ -48,7 +48,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
-          source: "*,!docs,!.github"
+          source: "*,!docs,!README.md,!.git*,!alembic.ini,!migrations,!requirements_dev.txt"
           target: "secretary"
           rm: true
 
