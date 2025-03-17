@@ -21,7 +21,7 @@ jobs:
         with:
           filters: |
             code:
-              - 'code/**'
+              - 'src/**'
             docs:
               - 'docs/**'
 
@@ -48,7 +48,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
-          source: "**/*,!docs/**,!.github/**,Makefile"
+          source: "*,!docs,!.github"
           target: "secretary"
           rm: true
 

@@ -1,11 +1,11 @@
 .PHONY: secretary_up
 secretary_up:
-	docker compose -f code/compose.yml up -d --build
+	docker compose up -d --build
 
 .PHONY: secretary_down
 secretary_down:
-	docker compose -f code/compose.yml down
+	docker compose down
 
 .PHONY: lint
 lint:
-	ruff check code
+	ruff check
