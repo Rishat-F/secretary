@@ -30,12 +30,10 @@ async def main() -> None:
     engine = create_async_engine(db_url)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
+    dp = Dispatcher(engine=engine, async_session=async_session)
     dp.startup.register(on_bot_start)
     register_handlers(dp)
     await bot.delete_webhook(drop_pending_updates=True)
-    dp["engine"] = engine
-    dp["async_session"] = async_session
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
