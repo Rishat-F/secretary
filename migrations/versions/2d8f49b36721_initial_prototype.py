@@ -1,4 +1,4 @@
-"""Initial prototype
+"""Initial prototyp
 
 Revision ID: 2d8f49b36721
 Revises:
