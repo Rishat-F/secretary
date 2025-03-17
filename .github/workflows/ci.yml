@@ -30,7 +30,7 @@ jobs:
               - 'compose.yml'
               - 'Dockerfile'
               - '.dockerignore'
-              - '.github/workflows/*'
+              - '.github/**'
               - '.gitignore'
               - 'Makefile'
               - 'migrations/**'
