@@ -13,25 +13,34 @@ jobs:
     name: Определение где произошло изменение
     runs-on: ubuntu-latest
     outputs:
-      code: ${{ steps.filter.outputs.code }}
+      src: ${{ steps.filter.outputs.code }}
       docs: ${{ steps.filter.outputs.docs }}
+      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
-            code:
-              - '*'
-              - '!docs/**'
-              - '!REAMDE.md'
+            src:
+              - 'src/**'
             docs:
               - 'docs/**'
-          predicate-quantifier: 'every'
+            deploy:
+              - 'alembic.ini'
+              - 'compose.yml'
+              - 'Dockerfile'
+              - '.dockerignore'
+              - '.github/workflows/*'
+              - '.gitignore'
+              - 'Makefile'
+              - 'migrations/**'
+              - 'requirements.txt'
+              - 'requirements_dev.txt'
 
   lint_and_test:
     name: Линтеры и тесты
     needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
+    if: ${{ needs.changes.outputs.src == 'true' || needs.changes.outputs.deploy == 'true' }}
     uses: ./.github/workflows/lint_test.yml
 
   deploy_dev:
