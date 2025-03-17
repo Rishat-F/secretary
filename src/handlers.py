@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from exceptions import UslugaNameTooLongError
 import messages
-from config import ADMIN_TG_ID
 from database import (
     delete_usluga,
     get_uslugi,
@@ -44,6 +43,7 @@ from keyboards import (
     zapisi_keyboard,
 )
 from models import Usluga, Zapis
+from secrets import ADMIN_TG_ID
 from states import UslugiActions, ZapisNaPriem
 from utils import (
     form_usluga_view,
