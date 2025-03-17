@@ -24,11 +24,15 @@ jobs:
               - 'src/**'
             docs:
               - 'docs/**'
+            root:
+              - '!src/**'
+              - '!docs/**'
+              - '!README.md'
 
   lint_and_test:
     name: Линтеры и тесты
     needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.root == 'true' }}
     uses: ./.github/workflows/lint_test.yml
 
   deploy_dev:
