@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
           envs: BOT_TOKEN, ADMIN_TG_ID
-          script: cd ~/secretary/code && docker compose up -d --build && docker system prune -f
+          script: cd ~/secretary && make secretary_up && docker system prune -f
 
   qa_approve:
     name: Апрув от QA
