@@ -15,27 +15,23 @@ jobs:
     outputs:
       code: ${{ steps.filter.outputs.code }}
       docs: ${{ steps.filter.outputs.docs }}
-      root: ${{ steps.filter.outputs.root }}
     steps:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
             code:
-              - 'src/**'
+              - '*'
+              - '!docs/**'
+              - '!REAMDE.md'
             docs:
               - 'docs/**'
-            root:
-              - '*'
-              - '!src/**'
-              - '!docs/**'
-              - '!README.md'
           predicate-quantifier: 'every'
 
   lint_and_test:
     name: Линтеры и тесты
     needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.root == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     uses: ./.github/workflows/lint_test.yml
 
   deploy_dev:
