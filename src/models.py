@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from constraints import USLUGA_NAME_MAX_LEN
+from src.constraints import USLUGA_NAME_MAX_LEN
 
 
 constraint_naming_conventions = {

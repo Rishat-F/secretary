@@ -40,13 +40,6 @@ uslugi_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
-back_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [back_button],
-    ],
-    resize_keyboard=True,
-)
-
 back_main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [back_button, main_menu_button],
