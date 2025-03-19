@@ -4,11 +4,11 @@ import re
 from calendar import Calendar
 from datetime import date
 
-from constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
-from messages import NO_USLUGI, NO_ZAPISI_FOR_ADMIN, NO_ZAPISI_FOR_CLIENT
-from models import Usluga, Zapis
+from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
+from src.messages import NO_USLUGI, NO_ZAPISI_FOR_ADMIN, NO_ZAPISI_FOR_CLIENT
+from src.models import Usluga, Zapis
 
-from exceptions import UslugaNameTooLongError
+from src.exceptions import UslugaNameTooLongError
 
 
 ValidationErrorMessage = str

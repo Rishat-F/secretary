@@ -6,7 +6,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
-from models import Usluga, Zapis
+from src.models import Usluga, Zapis
 
 
 async def get_uslugi(

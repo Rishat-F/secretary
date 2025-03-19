@@ -3,4 +3,4 @@ WORKDIR /secretary
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY src ./src
-ENTRYPOINT ["python3", "src/bot.py"]
+ENTRYPOINT ["python", "-m", "src.bot"]

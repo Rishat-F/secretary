@@ -9,9 +9,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-from config import db_url
-from models import Base
-from register_handlers import register_handlers
+from src.config import db_url
+from src.models import Base
+from src.handlers.register_handlers import register_handlers
 
 logging.basicConfig(level=logging.INFO)
 

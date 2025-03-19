@@ -1,7 +1,7 @@
 from aiogram import Dispatcher, F
 from aiogram.enums import ChatType
 
-from handlers import (
+from src.handlers.handlers import (
     choose_day_to_zapis,
     choose_month_to_zapis,
     choose_time_to_zapis,
@@ -22,9 +22,9 @@ from handlers import (
     uslugi,
     zapisi,
 )
-from keyboards import USLUGI, ZAPISI
-from secrets import ADMIN_TG_ID
-from states import UslugiActions, ZapisNaPriem
+from src.keyboards import USLUGI, ZAPISI
+from src.secrets import ADMIN_TG_ID
+from src.states import UslugiActions, ZapisNaPriem
 
 
 def register_handlers(dp: Dispatcher) -> None:
