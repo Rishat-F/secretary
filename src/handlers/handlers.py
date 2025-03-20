@@ -67,10 +67,8 @@ async def uslugi(
 ) -> None:
     if message.from_user is None:
         return None
-    result = await uslugi_logic(
-        user_id=message.from_user.id,
-        async_session=async_session,
-    )
+    async with async_session() as session:
+        result = await uslugi_logic(user_id=message.from_user.id, session=session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -81,7 +79,8 @@ async def choose_uslugi_action(
 ) -> None:
     if message.text is None:
         return None
-    result = await choose_uslugi_action_logic(message.text, async_session)
+    async with async_session() as session:
+        result = await choose_uslugi_action_logic(message.text, session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -92,7 +91,8 @@ async def set_usluga_name(
 ) -> None:
     if message.text is None:
         return None
-    result = await set_usluga_name_logic(message.text, async_session)
+    async with async_session() as session:
+        result = await set_usluga_name_logic(message.text, session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -111,7 +111,8 @@ async def set_usluga_duration(
     if not message.text:
         return None
     data = await state.get_data()
-    result = await set_usluga_duration_logic(message.text, async_session, data)
+    async with async_session() as session:
+        result = await set_usluga_duration_logic(message.text, session, data)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -123,7 +124,8 @@ async def choose_usluga_to_delete(
     if not message.text:
         return None
     uslugi_to_delete = await state.get_data()
-    result = await choose_usluga_to_delete_logic(message.text, async_session, uslugi_to_delete)
+    async with async_session() as session:
+        result = await choose_usluga_to_delete_logic(message.text, session, uslugi_to_delete)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -136,7 +138,8 @@ async def choose_usluga_to_update(
         return None
     data = await state.get_data()
     uslugi_names = data["uslugi_names"]
-    result = await choose_usluga_to_update_logic(message.text, async_session, uslugi_names)
+    async with async_session() as session:
+        result = await choose_usluga_to_update_logic(message.text, session, uslugi_names)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -160,7 +163,8 @@ async def set_usluga_new_name(
     if not message.text:
         return None
     data = await state.get_data()
-    result = await set_usluga_new_name_logic(message.text, async_session, data)
+    async with async_session() as session:
+        result = await set_usluga_new_name_logic(message.text, session, data)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -172,7 +176,8 @@ async def set_usluga_new_price(
     if not message.text:
         return None
     data = await state.get_data()
-    result = await set_usluga_new_price_logic(message.text, async_session, data)
+    async with async_session() as session:
+        result = await set_usluga_new_price_logic(message.text, session, data)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -184,7 +189,8 @@ async def set_usluga_new_duration(
     if not message.text:
         return None
     data = await state.get_data()
-    result = await set_usluga_new_duration_logic(message.text, async_session, data)
+    async with async_session() as session:
+        result = await set_usluga_new_duration_logic(message.text, session, data)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -195,10 +201,8 @@ async def zapisi(
 ) -> None:
     if message.from_user is None:
         return None
-    result = await zapisi_logic(
-        user_id=message.from_user.id,
-        async_session=async_session,
-    )
+    async with async_session() as session:
+        result = await zapisi_logic(user_id=message.from_user.id, session=session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -209,11 +213,12 @@ async def choose_zapisi_action(
 ) -> None:
     if not message.text or not message.from_user:
         return None
-    result = await choose_zapisi_action_logic(
-        message.text,
-        message.from_user.id,
-        async_session=async_session,
-    )
+    async with async_session() as session:
+        result = await choose_zapisi_action_logic(
+            message.text,
+            message.from_user.id,
+            session=session,
+        )
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -233,7 +238,8 @@ async def choose_year_to_zapis(
     if not message.text:
         return None
     data = await state.get_data()
-    result = await choose_year_to_zapis_logic(message.text, data, async_session)
+    async with async_session() as session:
+        result = await choose_year_to_zapis_logic(message.text, data, session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -253,7 +259,8 @@ async def choose_day_to_zapis(
     if not message.text:
         return None
     data = await state.get_data()
-    result = await choose_day_to_zapis_logic(message.text, data, async_session)
+    async with async_session() as session:
+        result = await choose_day_to_zapis_logic(message.text, data, session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -266,10 +273,11 @@ async def choose_time_to_zapis(
     if not message.text or not message.from_user:
         return None
     data = await state.get_data()
-    result = await choose_time_to_zapis_logic(
-        message.text,
-        message.from_user.id,
-        data,
-        async_session,
-    )
+    async with async_session() as session:
+        result = await choose_time_to_zapis_logic(
+            message.text,
+            message.from_user.id,
+            data,
+            session,
+        )
     await _process_logic_return(result, fsm_context=state, message=message, bot=bot)

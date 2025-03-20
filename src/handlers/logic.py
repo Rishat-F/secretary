@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta
 
 from aiogram import types
 from aiogram.fsm.state import State
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import messages
 from src.database import (
@@ -117,31 +117,25 @@ def _show_uslugi(
     return message_to_send
 
 
-async def uslugi_logic(
-    user_id: int,
-    async_session: async_sessionmaker[AsyncSession],
-) -> LogicResult:
+async def uslugi_logic(user_id: int, session: AsyncSession) -> LogicResult:
     if user_id == ADMIN_TG_ID:
         messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, uslugi_keyboard) ]
         state_to_set = UslugiActions.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     else:
-        uslugi = await get_uslugi(async_session)
+        uslugi = await get_uslugi(session)
         message_to_send = _show_uslugi(uslugi, main_keyboard, show_duration=False)
         messages_to_answer = [message_to_send]
         return _get_logic_result(messages_to_answer)
 
 
-async def choose_uslugi_action_logic(
-    user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
-) -> LogicResult:
+async def choose_uslugi_action_logic(user_input: str, session: AsyncSession) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
         return _to_main_menu_result()
     elif upper_text == SHOW_ALL_USLUGI.upper():
-        uslugi = await get_uslugi(async_session)
+        uslugi = await get_uslugi(session)
         message_to_send = _show_uslugi(uslugi, uslugi_keyboard, show_duration=True)
         messages_to_answer = [message_to_send]
         return _get_logic_result(messages_to_answer)
@@ -150,7 +144,7 @@ async def choose_uslugi_action_logic(
         state_to_set = UslugiActions.set_name
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == UPDATE.upper():
-        uslugi = await get_uslugi(async_session)
+        uslugi = await get_uslugi(session)
         if uslugi:
             uslugi_names = [usluga.name for usluga in uslugi]
             data_to_set = {"uslugi_names": uslugi_names}
@@ -166,7 +160,7 @@ async def choose_uslugi_action_logic(
             messages_to_answer = [ MessageToAnswer(messages.NO_USLUGI, uslugi_keyboard) ]
             return _get_logic_result(messages_to_answer)
     elif upper_text == DELETE.upper():
-        uslugi = await get_uslugi(async_session)
+        uslugi = await get_uslugi(session)
         if uslugi:
             uslugi_to_delete = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
             data_to_set = uslugi_to_delete
@@ -183,10 +177,7 @@ async def choose_uslugi_action_logic(
         return _get_logic_result(messages_to_answer)
 
 
-async def set_usluga_name_logic(
-    user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
-) -> LogicResult:
+async def set_usluga_name_logic(user_input: str, session: AsyncSession) -> LogicResult:
     text = preprocess_text(user_input)
     upper_text = text.upper()
     if upper_text == BACK.upper():
@@ -202,7 +193,7 @@ async def set_usluga_name_logic(
             messages_to_answer = [ MessageToAnswer(str(err), back_main_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
-            uslugi = await get_uslugi(async_session, filter_by={"name": usluga_name})
+            uslugi = await get_uslugi(session, filter_by={"name": usluga_name})
             if uslugi:
                 messages_to_answer = [
                     MessageToAnswer(
@@ -242,7 +233,7 @@ async def set_usluga_price_logic(user_input: str) -> LogicResult:
 
 async def set_usluga_duration_logic(
     user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = user_input.strip()
@@ -258,7 +249,7 @@ async def set_usluga_duration_logic(
         if isinstance(possible_duration, int):
             state_data.update({"duration": possible_duration})
             new_usluga = Usluga(**state_data)
-            await insert_usluga(async_session, new_usluga)
+            await insert_usluga(session, new_usluga)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.USLUGA_CREATED.format(name=new_usluga.name),
@@ -275,7 +266,7 @@ async def set_usluga_duration_logic(
 
 async def choose_usluga_to_delete_logic(
     user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     uslugi_to_delete: dict,
 ) -> LogicResult:
     text = user_input.strip()
@@ -293,7 +284,7 @@ async def choose_usluga_to_delete_logic(
             messages_to_answer = [ MessageToAnswer(messages.CHOOSE_USLUGA_TO_DELETE, back_main_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
-            await delete_usluga(async_session, usluga_name_to_delete)
+            await delete_usluga(session, usluga_name_to_delete)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.USLUGA_DELETED.format(name=usluga_name_to_delete),
@@ -306,7 +297,7 @@ async def choose_usluga_to_delete_logic(
 
 async def choose_usluga_to_update_logic(
     user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     uslugi_names: list[str],
 ) -> LogicResult:
     text = user_input.strip()
@@ -318,7 +309,7 @@ async def choose_usluga_to_update_logic(
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     elif text in uslugi_names:
-        [chosen_usluga] = await get_uslugi(async_session, filter_by={"name": text})
+        [chosen_usluga] = await get_uslugi(session, filter_by={"name": text})
         answer = (
             f"{form_usluga_view(chosen_usluga, show_duration=True)}\n"
             f"{messages.CHOOSE_FIELD_TO_CHANGE}"
@@ -416,7 +407,7 @@ def _update_another_usluga(uslugi_names: list[str]) -> LogicResult:
 
 async def set_usluga_new_name_logic(
     user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = preprocess_text(user_input)
@@ -458,7 +449,7 @@ async def set_usluga_new_name_logic(
                         new_name if name == old_name else name
                         for name in uslugi_names
                     ]
-                    await update_usluga(async_session, old_name, new_values={"name": new_name})
+                    await update_usluga(session, old_name, new_values={"name": new_name})
                     data_to_update = {
                         "uslugi_names": updated_uslugi_names,
                         "chosen_usluga_name": new_name,
@@ -477,7 +468,7 @@ async def set_usluga_new_name_logic(
 
 async def set_usluga_new_price_logic(
     user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = user_input.strip()
@@ -504,11 +495,7 @@ async def set_usluga_new_price_logic(
                 return _get_logic_result(messages_to_answer)
             else:
                 usluga_name = state_data["chosen_usluga_name"]
-                await update_usluga(
-                    async_session,
-                    usluga_name,
-                    new_values={"price": new_price},
-                )
+                await update_usluga(session, usluga_name, new_values={"price": new_price})
                 data_to_update = {"chosen_usluga_price": new_price}
                 messages_to_answer = [
                     MessageToAnswer(
@@ -529,7 +516,7 @@ async def set_usluga_new_price_logic(
 
 async def set_usluga_new_duration_logic(
     user_input: str,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = user_input.strip()
@@ -556,11 +543,7 @@ async def set_usluga_new_duration_logic(
                 return _get_logic_result(messages_to_answer)
             else:
                 usluga_name = state_data["chosen_usluga_name"]
-                await update_usluga(
-                    async_session,
-                    usluga_name,
-                    new_values={"duration": new_duration},
-                )
+                await update_usluga(session, usluga_name, new_values={"duration": new_duration})
                 data_to_update = {"chosen_usluga_duration": new_duration}
                 messages_to_answer = [
                     MessageToAnswer(
@@ -579,12 +562,9 @@ async def set_usluga_new_duration_logic(
             return _get_logic_result(messages_to_answer)
 
 
-async def zapisi_logic(
-    user_id: int,
-    async_session: async_sessionmaker[AsyncSession],
-) -> LogicResult:
+async def zapisi_logic(user_id: int, session: AsyncSession) -> LogicResult:
     if user_id == ADMIN_TG_ID:
-        zapisi = await get_active_zapisi(async_session)
+        zapisi = await get_active_zapisi(session)
         text = form_zapisi_list_text(zapisi, for_admin=True)
         messages_to_answer = [ MessageToAnswer(text, main_keyboard) ]
         return _get_logic_result(messages_to_answer)
@@ -597,14 +577,14 @@ async def zapisi_logic(
 async def choose_zapisi_action_logic(
     user_input: str,
     user_id: int,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
         return _to_main_menu_result()
     elif upper_text == ZAPIS_NA_PRIEM.upper():
-        uslugi = await get_uslugi(async_session)
+        uslugi = await get_uslugi(session)
         if not uslugi:
             messages_to_answer = [ MessageToAnswer(messages.NO_USLUGI, zapisi_keyboard) ]
             return _get_logic_result(messages_to_answer)
@@ -617,7 +597,7 @@ async def choose_zapisi_action_logic(
             data_to_set = {"uslugi_na_zapis": uslugi_na_zapis}
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
     elif upper_text == SHOW_ACTIVE_ZAPISI.upper():
-        zapisi = await get_active_zapisi(async_session, filter_by={"client_id": user_id})
+        zapisi = await get_active_zapisi(session, filter_by={"client_id": user_id})
         text = form_zapisi_list_text(zapisi, for_admin=False)
         messages_to_answer = [ MessageToAnswer(text, zapisi_keyboard) ]
         return _get_logic_result(messages_to_answer)
@@ -662,12 +642,12 @@ async def choose_usluga_to_zapis_logic(user_input: str, state_data: dict) -> Log
 async def choose_year_to_zapis_logic(
     user_input: str,
     state_data: dict,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        uslugi = await get_uslugi(async_session)
+        uslugi = await get_uslugi(session)
         if not uslugi:
             return _to_main_menu_result(messages.NO_USLUGI)
         else:
@@ -767,7 +747,7 @@ async def choose_month_to_zapis_logic(user_input: str, state_data: dict) -> Logi
 async def choose_day_to_zapis_logic(
     user_input: str,
     state_data: dict,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
@@ -805,7 +785,7 @@ async def choose_day_to_zapis_logic(
             chosen_month = state_data["chosen_month"]
             chosen_day = int(text)
             times_to_choose = get_available_times(
-                async_session,
+                session,
                 chosen_usluga_name,
                 chosen_year,
                 chosen_month, chosen_day,
@@ -832,7 +812,7 @@ async def choose_time_to_zapis_logic(
     user_input: str,
     user_id: int,
     state_data: dict,
-    async_session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
@@ -867,7 +847,7 @@ async def choose_time_to_zapis_logic(
             return _get_logic_result(messages_to_answer)
         else:
             chosen_usluga_name = state_data["chosen_usluga_name"]
-            [chosen_usluga] = await get_uslugi(async_session, filter_by={"name": chosen_usluga_name})
+            [chosen_usluga] = await get_uslugi(session, filter_by={"name": chosen_usluga_name})
             chosen_year = state_data["chosen_year"]
             chosen_month = months_swapped[state_data["chosen_month"]]
             chosen_day = state_data["chosen_day"]
@@ -887,7 +867,7 @@ async def choose_time_to_zapis_logic(
                 starts_at=starts_at,
                 ends_at=ends_at,
             )
-            await insert_zapis(async_session, zapis)
+            await insert_zapis(session, zapis)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.ZAPIS_SAVED.format(
