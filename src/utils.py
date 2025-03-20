@@ -145,11 +145,15 @@ def form_zapis_view(zapis: Zapis, with_date: bool, for_admin: bool) -> str:
         date_ = zapis.starts_at.strftime("%d.%m.%Y")
         view += f"<b>{date_}</b>\n"
     start_time = zapis.starts_at.strftime("%H:%M")
+    if zapis.usluga is None:
+        usluga_name = "Уже удаленная услуга"
+    else:
+        usluga_name = zapis.usluga.name
     if for_admin:
         end_time = zapis.ends_at.strftime("%H:%M")
-        view += f"    <i>{start_time} - {end_time}</i>  {zapis.usluga.name}\n"
+        view += f"    <i>{start_time} - {end_time}</i>  {usluga_name}\n"
     else:
-        view += f"    <i>{start_time}</i>  {zapis.usluga.name}\n"
+        view += f"    <i>{start_time}</i>  {usluga_name}\n"
     return view
 
 
