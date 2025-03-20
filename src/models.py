@@ -1,6 +1,7 @@
 """ORM модели."""
 
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -87,4 +88,4 @@ class Zapis(Base):
         comment="Дата и время окончания приема (должно быть кратно 30 минутам)",
     )
 
-    usluga: Mapped["Usluga"] = relationship(back_populates="zapisi", lazy="joined")
+    usluga: Mapped[Optional["Usluga"]] = relationship(back_populates="zapisi", lazy="joined")
