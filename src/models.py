@@ -25,11 +25,11 @@ class Base(DeclarativeBase):
     metadata = metadata
 
 
-class Usluga(Base):
-    __tablename__ = "usluga"
+class Service(Base):
+    __tablename__ = "service"
     __table_args__ = {"comment": "Услуга (например, 'Стрижка модельная')"}
 
-    usluga_id: Mapped[int] = mapped_column(
+    service_id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         nullable=False,
@@ -53,14 +53,14 @@ class Usluga(Base):
         comment="Длительность предоставления услуги (в минутах, должно быть кратно 30)",
     )
 
-    zapisi: Mapped[list["Zapis"]] = relationship(back_populates="usluga")
+    appointments: Mapped[list["Appointment"]] = relationship(back_populates="service")
 
 
-class Zapis(Base):
-    __tablename__ = "zapis"
+class Appointment(Base):
+    __tablename__ = "appointment"
     __table_args__ = {"comment": "Запись на прием"}
 
-    zapis_id: Mapped[int] = mapped_column(
+    appointment_id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         nullable=False,
@@ -72,8 +72,8 @@ class Zapis(Base):
         nullable=False,
         comment="Идентификатор клиента (телеграмм ID)",
     )
-    usluga_id: Mapped[int | None] = mapped_column(
-        ForeignKey("usluga.usluga_id", ondelete="SET NULL"),
+    service_id: Mapped[int | None] = mapped_column(
+        ForeignKey("service.service_id", ondelete="SET NULL"),
         nullable=True,
         comment="Идентификатор услуги",
     )
@@ -88,4 +88,4 @@ class Zapis(Base):
         comment="Дата и время окончания приема (должно быть кратно 30 минутам)",
     )
 
-    usluga: Mapped[Optional["Usluga"]] = relationship(back_populates="zapisi", lazy="joined")
+    service: Mapped[Optional["Service"]] = relationship(back_populates="appointments", lazy="joined")
