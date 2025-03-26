@@ -1,5 +1,5 @@
 """Пользовательские исключения."""
 
 
-class UslugaNameTooLongError(Exception):
+class ServiceNameTooLongError(Exception):
     """Название услуги слишком длинное."""

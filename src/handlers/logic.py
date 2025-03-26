@@ -7,14 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import messages
 from src.database import (
-    delete_usluga,
-    get_uslugi,
-    get_active_zapisi,
-    insert_usluga,
-    insert_zapis,
-    update_usluga,
+    delete_service,
+    get_services,
+    get_active_appointments,
+    insert_service,
+    insert_appointment,
+    update_service,
 )
-from src.exceptions import UslugaNameTooLongError
+from src.exceptions import ServiceNameTooLongError
 from src.keyboards import (
     BACK,
     CREATE,
@@ -32,30 +32,30 @@ from src.keyboards import (
     get_days_keyboard,
     get_months_keyboard,
     get_times_keyboard,
-    get_uslugi_to_update_keyboard,
+    get_services_to_update_keyboard,
     get_years_keyboard,
     main_keyboard,
-    set_usluga_new_field_keyboard,
-    usluga_fields_keyboard,
-    uslugi_keyboard,
-    zapisi_keyboard,
+    set_service_new_field_keyboard,
+    service_fields_keyboard,
+    services_keyboard,
+    appointments_keyboard,
 )
-from src.models import Usluga, Zapis
+from src.models import Service, Appointment
 from src.secrets import ADMIN_TG_ID
-from src.states import UslugiActions, ZapisNaPriem
+from src.states import ServicesActions, MakeAppointment
 from src.utils import (
-    form_usluga_view,
-    form_uslugi_list_text,
-    form_zapis_view,
-    form_zapisi_list_text,
+    form_service_view,
+    form_services_list_text,
+    form_appointment_view,
+    form_appointments_list_text,
     get_available_times,
     get_days,
     get_months,
     months_swapped,
     preprocess_text,
-    validate_usluga_duration,
-    validate_usluga_name,
-    validate_usluga_price,
+    validate_service_duration,
+    validate_service_name,
+    validate_service_price,
 )
 
 
@@ -107,122 +107,122 @@ def _to_main_menu_result(message_to_send: str = messages.MAIN_MENU) -> LogicResu
     return _get_logic_result(messages_to_answer, clear_state=True)
 
 
-def _show_uslugi(
-    uslugi: list[Usluga],
+def _show_services(
+    services: list[Service],
     keyboard: types.ReplyKeyboardMarkup,
     show_duration: bool,
 ) -> MessageToAnswer:
-    text = form_uslugi_list_text(uslugi, show_duration)
+    text = form_services_list_text(services, show_duration)
     message_to_send = MessageToAnswer(text, keyboard)
     return message_to_send
 
 
-async def uslugi_logic(user_id: int, session: AsyncSession) -> LogicResult:
+async def services_logic(user_id: int, session: AsyncSession) -> LogicResult:
     if user_id == ADMIN_TG_ID:
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, uslugi_keyboard) ]
-        state_to_set = UslugiActions.choose_action
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, services_keyboard) ]
+        state_to_set = ServicesActions.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     else:
-        uslugi = await get_uslugi(session)
-        message_to_send = _show_uslugi(uslugi, main_keyboard, show_duration=False)
+        services = await get_services(session)
+        message_to_send = _show_services(services, main_keyboard, show_duration=False)
         messages_to_answer = [message_to_send]
         return _get_logic_result(messages_to_answer)
 
 
-async def choose_uslugi_action_logic(user_input: str, session: AsyncSession) -> LogicResult:
+async def choose_services_action_logic(user_input: str, session: AsyncSession) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
         return _to_main_menu_result()
     elif upper_text == SHOW_ALL_USLUGI.upper():
-        uslugi = await get_uslugi(session)
-        message_to_send = _show_uslugi(uslugi, uslugi_keyboard, show_duration=True)
+        services = await get_services(session)
+        message_to_send = _show_services(services, services_keyboard, show_duration=True)
         messages_to_answer = [message_to_send]
         return _get_logic_result(messages_to_answer)
     elif upper_text == CREATE.upper():
-        messages_to_answer = [ MessageToAnswer(messages.SET_USLUGA_NAME, back_main_keyboard) ]
-        state_to_set = UslugiActions.set_name
+        messages_to_answer = [ MessageToAnswer(messages.SET_SERVICE_NAME, back_main_keyboard) ]
+        state_to_set = ServicesActions.set_name
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == UPDATE.upper():
-        uslugi = await get_uslugi(session)
-        if uslugi:
-            uslugi_names = [usluga.name for usluga in uslugi]
-            data_to_set = {"uslugi_names": uslugi_names}
-            state_to_set = UslugiActions.choose_usluga_to_update
+        services = await get_services(session)
+        if services:
+            services_names = [service.name for service in services]
+            data_to_set = {"services_names": services_names}
+            state_to_set = ServicesActions.choose_service_to_update
             messages_to_answer = [
                 MessageToAnswer(
-                    messages.CHOOSE_USLUGA_TO_UPDATE,
-                    get_uslugi_to_update_keyboard(uslugi_names),
+                    messages.CHOOSE_SERVICE_TO_UPDATE,
+                    get_services_to_update_keyboard(services_names),
                 ),
             ]
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
         else:
-            messages_to_answer = [ MessageToAnswer(messages.NO_USLUGI, uslugi_keyboard) ]
+            messages_to_answer = [ MessageToAnswer(messages.NO_SERVICES, services_keyboard) ]
             return _get_logic_result(messages_to_answer)
     elif upper_text == DELETE.upper():
-        uslugi = await get_uslugi(session)
-        if uslugi:
-            uslugi_to_delete = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
-            data_to_set = uslugi_to_delete
-            state_to_set = UslugiActions.choose_usluga_to_delete
-            message_to_send_1 = _show_uslugi(uslugi, back_main_keyboard, show_duration=True)
-            message_to_send_2 = MessageToAnswer(messages.CHOOSE_USLUGA_TO_DELETE, back_main_keyboard)
+        services = await get_services(session)
+        if services:
+            services_to_delete = {str(pos): service.name for pos, service in enumerate(services, start=1)}
+            data_to_set = services_to_delete
+            state_to_set = ServicesActions.choose_service_to_delete
+            message_to_send_1 = _show_services(services, back_main_keyboard, show_duration=True)
+            message_to_send_2 = MessageToAnswer(messages.CHOOSE_SERVICE_TO_DELETE, back_main_keyboard)
             messages_to_answer = [message_to_send_1, message_to_send_2]
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
         else:
-            messages_to_answer = [ MessageToAnswer(messages.NO_USLUGI, uslugi_keyboard) ]
+            messages_to_answer = [ MessageToAnswer(messages.NO_SERVICES, services_keyboard) ]
             return _get_logic_result(messages_to_answer)
     else:
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_GIVEN_ACTION, uslugi_keyboard) ]
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_GIVEN_ACTION, services_keyboard) ]
         return _get_logic_result(messages_to_answer)
 
 
-async def set_usluga_name_logic(user_input: str, session: AsyncSession) -> LogicResult:
+async def set_service_name_logic(user_input: str, session: AsyncSession) -> LogicResult:
     text = preprocess_text(user_input)
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, uslugi_keyboard) ]
-        state_to_set = UslugiActions.choose_action
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, services_keyboard) ]
+        state_to_set = ServicesActions.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     else:
         try:
-            usluga_name = validate_usluga_name(text)
-        except UslugaNameTooLongError as err:
+            service_name = validate_service_name(text)
+        except ServiceNameTooLongError as err:
             messages_to_answer = [ MessageToAnswer(str(err), back_main_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
-            uslugi = await get_uslugi(session, filter_by={"name": usluga_name})
-            if uslugi:
+            services = await get_services(session, filter_by={"name": service_name})
+            if services:
                 messages_to_answer = [
                     MessageToAnswer(
-                        messages.USLUGA_ALREADY_EXISTS.format(name=usluga_name),
+                        messages.SERVICE_ALREADY_EXISTS.format(name=service_name),
                         back_main_keyboard,
                     ),
                 ]
                 return _get_logic_result(messages_to_answer)
             else:
-                messages_to_answer = [ MessageToAnswer(messages.SET_USLUGA_PRICE, back_main_keyboard) ]
-                state_to_set = UslugiActions.set_price
-                data_to_set = {"name": usluga_name}
+                messages_to_answer = [ MessageToAnswer(messages.SET_SERVICE_PRICE, back_main_keyboard) ]
+                state_to_set = ServicesActions.set_price
+                data_to_set = {"name": service_name}
                 return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
 
 
-async def set_usluga_price_logic(user_input: str) -> LogicResult:
+async def set_service_price_logic(user_input: str) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        messages_to_answer = [ MessageToAnswer(messages.SET_USLUGA_NAME, back_main_keyboard) ]
-        state_to_set = UslugiActions.set_name
+        messages_to_answer = [ MessageToAnswer(messages.SET_SERVICE_NAME, back_main_keyboard) ]
+        state_to_set = ServicesActions.set_name
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     else:
-        possible_price = validate_usluga_price(text)
+        possible_price = validate_service_price(text)
         if isinstance(possible_price, int):
-            messages_to_answer = [ MessageToAnswer(messages.SET_USLUGA_DURATION, back_main_keyboard) ]
-            state_to_set = UslugiActions.set_duration
+            messages_to_answer = [ MessageToAnswer(messages.SET_SERVICE_DURATION, back_main_keyboard) ]
+            state_to_set = ServicesActions.set_duration
             data_to_update = {"price": possible_price}
             return _get_logic_result(messages_to_answer, state_to_set, data_to_update=data_to_update)
         else:
@@ -231,7 +231,7 @@ async def set_usluga_price_logic(user_input: str) -> LogicResult:
             return _get_logic_result(messages_to_answer)
 
 
-async def set_usluga_duration_logic(
+async def set_service_duration_logic(
     user_input: str,
     session: AsyncSession,
     state_data: dict,
@@ -239,24 +239,24 @@ async def set_usluga_duration_logic(
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        messages_to_answer = [ MessageToAnswer(messages.SET_USLUGA_PRICE, back_main_keyboard) ]
-        state_to_set = UslugiActions.set_price
+        messages_to_answer = [ MessageToAnswer(messages.SET_SERVICE_PRICE, back_main_keyboard) ]
+        state_to_set = ServicesActions.set_price
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     else:
-        possible_duration = validate_usluga_duration(text)
+        possible_duration = validate_service_duration(text)
         if isinstance(possible_duration, int):
             state_data.update({"duration": possible_duration})
-            new_usluga = Usluga(**state_data)
-            await insert_usluga(session, new_usluga)
+            new_service = Service(**state_data)
+            await insert_service(session, new_service)
             messages_to_answer = [
                 MessageToAnswer(
-                    messages.USLUGA_CREATED.format(name=new_usluga.name),
-                    uslugi_keyboard,
+                    messages.SERVICE_CREATED.format(name=new_service.name),
+                    services_keyboard,
                 ),
             ]
-            state_to_set = UslugiActions.choose_action
+            state_to_set = ServicesActions.choose_action
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set={})
         else:
             error_message = possible_duration
@@ -264,317 +264,317 @@ async def set_usluga_duration_logic(
             return _get_logic_result(messages_to_answer)
 
 
-async def choose_usluga_to_delete_logic(
+async def choose_service_to_delete_logic(
     user_input: str,
     session: AsyncSession,
-    uslugi_to_delete: dict,
+    services_to_delete: dict,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, uslugi_keyboard) ]
-        state_to_set = UslugiActions.choose_action
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, services_keyboard) ]
+        state_to_set = ServicesActions.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     else:
         pos_to_delete = text
-        usluga_name_to_delete = uslugi_to_delete.get(pos_to_delete)
-        if usluga_name_to_delete is None:
-            messages_to_answer = [ MessageToAnswer(messages.CHOOSE_USLUGA_TO_DELETE, back_main_keyboard) ]
+        service_name_to_delete = services_to_delete.get(pos_to_delete)
+        if service_name_to_delete is None:
+            messages_to_answer = [ MessageToAnswer(messages.CHOOSE_SERVICE_TO_DELETE, back_main_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
-            await delete_usluga(session, usluga_name_to_delete)
+            await delete_service(session, service_name_to_delete)
             messages_to_answer = [
                 MessageToAnswer(
-                    messages.USLUGA_DELETED.format(name=usluga_name_to_delete),
-                    uslugi_keyboard,
+                    messages.SERVICE_DELETED.format(name=service_name_to_delete),
+                    services_keyboard,
                 ),
             ]
-            state_to_set = UslugiActions.choose_action
+            state_to_set = ServicesActions.choose_action
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set={})
 
 
-async def choose_usluga_to_update_logic(
+async def choose_service_to_update_logic(
     user_input: str,
     session: AsyncSession,
-    uslugi_names: list[str],
+    services_names: list[str],
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, uslugi_keyboard) ]
-        state_to_set = UslugiActions.choose_action
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, services_keyboard) ]
+        state_to_set = ServicesActions.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
-    elif text in uslugi_names:
-        [chosen_usluga] = await get_uslugi(session, filter_by={"name": text})
+    elif text in services_names:
+        [chosen_service] = await get_services(session, filter_by={"name": text})
         answer = (
-            f"{form_usluga_view(chosen_usluga, show_duration=True)}\n"
+            f"{form_service_view(chosen_service, show_duration=True)}\n"
             f"{messages.CHOOSE_FIELD_TO_CHANGE}"
         )
-        messages_to_answer = [ MessageToAnswer(answer, usluga_fields_keyboard) ]
-        state_to_set = UslugiActions.choose_usluga_field_to_update
+        messages_to_answer = [ MessageToAnswer(answer, service_fields_keyboard) ]
+        state_to_set = ServicesActions.choose_service_field_to_update
         data_to_update = {
-            "chosen_usluga_name": chosen_usluga.name,
-            "chosen_usluga_price": chosen_usluga.price,
-            "chosen_usluga_duration": chosen_usluga.duration,
+            "chosen_service_name": chosen_service.name,
+            "chosen_service_price": chosen_service.price,
+            "chosen_service_duration": chosen_service.duration,
         }
         return _get_logic_result(messages_to_answer, state_to_set, data_to_update=data_to_update)
     else:
         messages_to_answer = [
             MessageToAnswer(
-                messages.CHOOSE_GIVEN_USLUGI,
-                get_uslugi_to_update_keyboard(uslugi_names),
+                messages.CHOOSE_GIVEN_SERVICES,
+                get_services_to_update_keyboard(services_names),
             )
         ]
         return _get_logic_result(messages_to_answer)
 
 
 def _field_chosen_to_update(message_text: str, state_to_set: State) -> LogicResult:
-    messages_to_answer = [ MessageToAnswer(message_text, set_usluga_new_field_keyboard) ]
+    messages_to_answer = [ MessageToAnswer(message_text, set_service_new_field_keyboard) ]
     return _get_logic_result(messages_to_answer, state_to_set)
 
 
-async def choose_usluga_field_to_update_logic(
+async def choose_service_field_to_update_logic(
     user_input: str,
-    uslugi_names: list[str],
+    services_names: list[str],
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
         messages_to_answer = [
             MessageToAnswer(
-                messages.CHOOSE_USLUGA_TO_UPDATE,
-                get_uslugi_to_update_keyboard(uslugi_names),
+                messages.CHOOSE_SERVICE_TO_UPDATE,
+                get_services_to_update_keyboard(services_names),
             ),
         ]
-        state_to_set = UslugiActions.choose_usluga_to_update
+        state_to_set = ServicesActions.choose_service_to_update
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     elif upper_text in NAME.upper():
         return _field_chosen_to_update(
-            message_text=messages.SET_USLUGA_NEW_NAME,
-            state_to_set=UslugiActions.set_new_name,
+            message_text=messages.SET_SERVICE_NEW_NAME,
+            state_to_set=ServicesActions.set_new_name,
         )
     elif upper_text in PRICE.upper():
         return _field_chosen_to_update(
-            message_text=messages.SET_USLUGA_NEW_PRICE,
-            state_to_set=UslugiActions.set_new_price,
+            message_text=messages.SET_SERVICE_NEW_PRICE,
+            state_to_set=ServicesActions.set_new_price,
         )
     elif upper_text in DURATION.upper():
         return _field_chosen_to_update(
-            message_text=messages.SET_USLUGA_NEW_DURATION,
-            state_to_set=UslugiActions.set_new_duration,
+            message_text=messages.SET_SERVICE_NEW_DURATION,
+            state_to_set=ServicesActions.set_new_duration,
         )
     else:
         messages_to_answer = [
             MessageToAnswer(
                 messages.CHOOSE_GIVEN_FIELD_TO_CHANGE,
-                usluga_fields_keyboard,
+                service_fields_keyboard,
             ),
         ]
         return _get_logic_result(messages_to_answer)
 
 
-def _back_from_changing_usluga_field(state_data: dict) -> LogicResult:
-    chosen_usluga = Usluga(
-        name=state_data["chosen_usluga_name"],
-        price=state_data["chosen_usluga_price"],
-        duration=state_data["chosen_usluga_duration"],
+def _back_from_changing_service_field(state_data: dict) -> LogicResult:
+    chosen_service = Service(
+        name=state_data["chosen_service_name"],
+        price=state_data["chosen_service_price"],
+        duration=state_data["chosen_service_duration"],
     )
     answer = (
-        f"{form_usluga_view(chosen_usluga, show_duration=True)}\n"
+        f"{form_service_view(chosen_service, show_duration=True)}\n"
         f"{messages.CHOOSE_FIELD_TO_CHANGE}"
     )
-    messages_to_answer = [ MessageToAnswer(answer, usluga_fields_keyboard) ]
-    state_to_set = UslugiActions.choose_usluga_field_to_update
+    messages_to_answer = [ MessageToAnswer(answer, service_fields_keyboard) ]
+    state_to_set = ServicesActions.choose_service_field_to_update
     return _get_logic_result(messages_to_answer, state_to_set)
 
 
-def _update_another_usluga(uslugi_names: list[str]) -> LogicResult:
-    state_to_set = UslugiActions.choose_usluga_to_update
+def _update_another_service(services_names: list[str]) -> LogicResult:
+    state_to_set = ServicesActions.choose_service_to_update
     messages_to_answer = [
         MessageToAnswer(
-            messages.CHOOSE_USLUGA_TO_UPDATE,
-            get_uslugi_to_update_keyboard(uslugi_names),
+            messages.CHOOSE_SERVICE_TO_UPDATE,
+            get_services_to_update_keyboard(services_names),
         ),
     ]
     return _get_logic_result(messages_to_answer, state_to_set)
 
 
-async def set_usluga_new_name_logic(
+async def set_service_new_name_logic(
     user_input: str,
     session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = preprocess_text(user_input)
     upper_text = text.upper()
-    uslugi_names: list = state_data["uslugi_names"]
+    services_names: list = state_data["services_names"]
     if upper_text == BACK.upper():
-        return _back_from_changing_usluga_field(state_data)
+        return _back_from_changing_service_field(state_data)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     elif upper_text == UPDATE_ANOTHER_USLUGA.upper():
-        return _update_another_usluga(uslugi_names)
+        return _update_another_service(services_names)
     else:
-        old_name = state_data["chosen_usluga_name"]
+        old_name = state_data["chosen_service_name"]
         if old_name == text:
             messages_to_answer = [
                 MessageToAnswer(
-                    messages.USLUGA_OLD_NAME_AND_NEW_NAME_ARE_SIMILAR,
-                    set_usluga_new_field_keyboard,
+                    messages.SERVICE_OLD_NAME_AND_NEW_NAME_ARE_SIMILAR,
+                    set_service_new_field_keyboard,
                 ),
             ]
             return _get_logic_result(messages_to_answer)
         else:
             try:
-                new_name = validate_usluga_name(text)
-            except UslugaNameTooLongError as err:
-                messages_to_answer = [ MessageToAnswer(str(err), set_usluga_new_field_keyboard) ]
+                new_name = validate_service_name(text)
+            except ServiceNameTooLongError as err:
+                messages_to_answer = [ MessageToAnswer(str(err), set_service_new_field_keyboard) ]
                 return _get_logic_result(messages_to_answer)
             else:
-                if new_name in uslugi_names:
+                if new_name in services_names:
                     messages_to_answer = [
                         MessageToAnswer(
-                            messages.USLUGA_ALREADY_EXISTS.format(name=new_name),
-                            set_usluga_new_field_keyboard,
+                            messages.SERVICE_ALREADY_EXISTS.format(name=new_name),
+                            set_service_new_field_keyboard,
                         ),
                     ]
                     return _get_logic_result(messages_to_answer)
                 else:
-                    updated_uslugi_names = [
+                    updated_services_names = [
                         new_name if name == old_name else name
-                        for name in uslugi_names
+                        for name in services_names
                     ]
-                    await update_usluga(session, old_name, new_values={"name": new_name})
+                    await update_service(session, old_name, new_values={"name": new_name})
                     data_to_update = {
-                        "uslugi_names": updated_uslugi_names,
-                        "chosen_usluga_name": new_name,
+                        "services_names": updated_services_names,
+                        "chosen_service_name": new_name,
                     }
                     messages_to_answer = [
                         MessageToAnswer(
-                            messages.USLUGA_NEW_NAME_SETTLED.format(
+                            messages.SERVICE_NEW_NAME_SETTLED.format(
                                 old_name=old_name,
                                 new_name=new_name,
                             ),
-                            set_usluga_new_field_keyboard,
+                            set_service_new_field_keyboard,
                         ),
                     ]
                     return _get_logic_result(messages_to_answer, data_to_update=data_to_update)
 
 
-async def set_usluga_new_price_logic(
+async def set_service_new_price_logic(
     user_input: str,
     session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
-    uslugi_names: list = state_data["uslugi_names"]
+    services_names: list = state_data["services_names"]
     if upper_text == BACK.upper():
-        return _back_from_changing_usluga_field(state_data)
+        return _back_from_changing_service_field(state_data)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     elif upper_text == UPDATE_ANOTHER_USLUGA.upper():
-        return _update_another_usluga(uslugi_names)
+        return _update_another_service(services_names)
     else:
-        possible_price = validate_usluga_price(text)
+        possible_price = validate_service_price(text)
         if isinstance(possible_price, int):
             new_price = possible_price
-            old_price = state_data["chosen_usluga_price"]
+            old_price = state_data["chosen_service_price"]
             if new_price == old_price:
                 messages_to_answer = [
                     MessageToAnswer(
-                        messages.USLUGA_OLD_PRICE_AND_NEW_PRICE_ARE_SIMILAR,
-                        set_usluga_new_field_keyboard,
+                        messages.SERVICE_OLD_PRICE_AND_NEW_PRICE_ARE_SIMILAR,
+                        set_service_new_field_keyboard,
                     ),
                 ]
                 return _get_logic_result(messages_to_answer)
             else:
-                usluga_name = state_data["chosen_usluga_name"]
-                await update_usluga(session, usluga_name, new_values={"price": new_price})
-                data_to_update = {"chosen_usluga_price": new_price}
+                service_name = state_data["chosen_service_name"]
+                await update_service(session, service_name, new_values={"price": new_price})
+                data_to_update = {"chosen_service_price": new_price}
                 messages_to_answer = [
                     MessageToAnswer(
-                        messages.USLUGA_NEW_PRICE_SETTLED.format(
-                            usluga_name=usluga_name,
+                        messages.SERVICE_NEW_PRICE_SETTLED.format(
+                            service_name=service_name,
                             old_price=old_price,
                             new_price=new_price,
                         ),
-                        set_usluga_new_field_keyboard,
+                        set_service_new_field_keyboard,
                     ),
                 ]
                 return _get_logic_result(messages_to_answer, data_to_update=data_to_update)
         else:
             error_message = possible_price
-            messages_to_answer = [ MessageToAnswer(error_message, set_usluga_new_field_keyboard) ]
+            messages_to_answer = [ MessageToAnswer(error_message, set_service_new_field_keyboard) ]
             return _get_logic_result(messages_to_answer)
 
 
-async def set_usluga_new_duration_logic(
+async def set_service_new_duration_logic(
     user_input: str,
     session: AsyncSession,
     state_data: dict,
 ) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
-    uslugi_names: list = state_data["uslugi_names"]
+    services_names: list = state_data["services_names"]
     if upper_text == BACK.upper():
-        return _back_from_changing_usluga_field(state_data)
+        return _back_from_changing_service_field(state_data)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     elif upper_text == UPDATE_ANOTHER_USLUGA.upper():
-        return _update_another_usluga(uslugi_names)
+        return _update_another_service(services_names)
     else:
-        possible_duration = validate_usluga_duration(text)
+        possible_duration = validate_service_duration(text)
         if isinstance(possible_duration, int):
             new_duration = possible_duration
-            old_duration = state_data["chosen_usluga_duration"]
+            old_duration = state_data["chosen_service_duration"]
             if new_duration == old_duration:
                 messages_to_answer = [
                     MessageToAnswer(
-                        messages.USLUGA_OLD_DURATION_AND_NEW_DURATION_ARE_SIMILAR,
-                        set_usluga_new_field_keyboard,
+                        messages.SERVICE_OLD_DURATION_AND_NEW_DURATION_ARE_SIMILAR,
+                        set_service_new_field_keyboard,
                     ),
                 ]
                 return _get_logic_result(messages_to_answer)
             else:
-                usluga_name = state_data["chosen_usluga_name"]
-                await update_usluga(session, usluga_name, new_values={"duration": new_duration})
-                data_to_update = {"chosen_usluga_duration": new_duration}
+                service_name = state_data["chosen_service_name"]
+                await update_service(session, service_name, new_values={"duration": new_duration})
+                data_to_update = {"chosen_service_duration": new_duration}
                 messages_to_answer = [
                     MessageToAnswer(
-                        messages.USLUGA_NEW_DURATION_SETTLED.format(
-                            usluga_name=usluga_name,
+                        messages.SERVICE_NEW_DURATION_SETTLED.format(
+                            service_name=service_name,
                             old_duration=old_duration,
                             new_duration=new_duration,
                         ),
-                        set_usluga_new_field_keyboard,
+                        set_service_new_field_keyboard,
                     ),
                 ]
                 return _get_logic_result(messages_to_answer, data_to_update=data_to_update)
         else:
             error_message = possible_duration
-            messages_to_answer = [ MessageToAnswer(error_message, set_usluga_new_field_keyboard) ]
+            messages_to_answer = [ MessageToAnswer(error_message, set_service_new_field_keyboard) ]
             return _get_logic_result(messages_to_answer)
 
 
-async def zapisi_logic(user_id: int, session: AsyncSession) -> LogicResult:
+async def appointments_logic(user_id: int, session: AsyncSession) -> LogicResult:
     if user_id == ADMIN_TG_ID:
-        zapisi = await get_active_zapisi(session)
-        text = form_zapisi_list_text(zapisi, for_admin=True)
+        appointments = await get_active_appointments(session)
+        text = form_appointments_list_text(appointments, for_admin=True)
         messages_to_answer = [ MessageToAnswer(text, main_keyboard) ]
         return _get_logic_result(messages_to_answer)
     else:
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, zapisi_keyboard) ]
-        state_to_set = ZapisNaPriem.choose_action
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, appointments_keyboard) ]
+        state_to_set = MakeAppointment.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
 
 
-async def choose_zapisi_action_logic(
+async def choose_appointments_action_logic(
     user_input: str,
     user_id: int,
     session: AsyncSession,
@@ -584,43 +584,43 @@ async def choose_zapisi_action_logic(
     if upper_text == BACK.upper():
         return _to_main_menu_result()
     elif upper_text == ZAPIS_NA_PRIEM.upper():
-        uslugi = await get_uslugi(session)
-        if not uslugi:
-            messages_to_answer = [ MessageToAnswer(messages.NO_USLUGI, zapisi_keyboard) ]
+        services = await get_services(session)
+        if not services:
+            messages_to_answer = [ MessageToAnswer(messages.NO_SERVICES, appointments_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
-            uslugi_na_zapis = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
-            message_to_send_1 = _show_uslugi(uslugi, back_main_keyboard, show_duration=False)
-            message_to_send_2 = MessageToAnswer(messages.CHOOSE_USLUGA_TO_ZAPIS, back_main_keyboard)
+            services_for_appointment = {str(pos): service.name for pos, service in enumerate(services, start=1)}
+            message_to_send_1 = _show_services(services, back_main_keyboard, show_duration=False)
+            message_to_send_2 = MessageToAnswer(messages.CHOOSE_SERVICE_TO_MAKE_APPOINTMENT, back_main_keyboard)
             messages_to_answer = [message_to_send_1, message_to_send_2]
-            state_to_set = ZapisNaPriem.choose_usluga
-            data_to_set = {"uslugi_na_zapis": uslugi_na_zapis}
+            state_to_set = MakeAppointment.choose_service
+            data_to_set = {"services_for_appointment": services_for_appointment}
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
     elif upper_text == SHOW_ACTIVE_ZAPISI.upper():
-        zapisi = await get_active_zapisi(session, filter_by={"client_id": user_id})
-        text = form_zapisi_list_text(zapisi, for_admin=False)
-        messages_to_answer = [ MessageToAnswer(text, zapisi_keyboard) ]
+        appointments = await get_active_appointments(session, filter_by={"client_id": user_id})
+        text = form_appointments_list_text(appointments, for_admin=False)
+        messages_to_answer = [ MessageToAnswer(text, appointments_keyboard) ]
         return _get_logic_result(messages_to_answer)
     else:
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_GIVEN_ACTION, zapisi_keyboard) ]
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_GIVEN_ACTION, appointments_keyboard) ]
         return _get_logic_result(messages_to_answer)
 
 
-async def choose_usluga_to_zapis_logic(user_input: str, state_data: dict) -> LogicResult:
+async def choose_service_for_appointment_logic(user_input: str, state_data: dict) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, zapisi_keyboard) ]
-        state_to_set = ZapisNaPriem.choose_action
+        messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, appointments_keyboard) ]
+        state_to_set = MakeAppointment.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
     else:
-        uslugi_to_zapis = state_data["uslugi_na_zapis"]
-        pos_to_zapis = text
-        usluga_name_to_zapis = uslugi_to_zapis.get(pos_to_zapis)
-        if usluga_name_to_zapis is None:
-            messages_to_answer = [ MessageToAnswer(messages.CHOOSE_USLUGA_TO_ZAPIS, back_main_keyboard) ]
+        services_for_appointment = state_data["services_for_appointment"]
+        pos_for_appointment = text
+        service_name_for_appointment = services_for_appointment.get(pos_for_appointment)
+        if service_name_for_appointment is None:
+            messages_to_answer = [ MessageToAnswer(messages.CHOOSE_SERVICE_TO_MAKE_APPOINTMENT, back_main_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
             current_year = datetime.today().year
@@ -631,15 +631,15 @@ async def choose_usluga_to_zapis_logic(user_input: str, state_data: dict) -> Log
                     get_years_keyboard(years_to_choose),
                 ),
             ]
-            state_to_set = ZapisNaPriem.choose_year
+            state_to_set = MakeAppointment.choose_year
             data_to_set = {
-                "chosen_usluga_name": usluga_name_to_zapis,
+                "chosen_service_name": service_name_for_appointment,
                 "years_to_choose": years_to_choose,
             }
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
 
 
-async def choose_year_to_zapis_logic(
+async def choose_year_for_appointment_logic(
     user_input: str,
     state_data: dict,
     session: AsyncSession,
@@ -647,16 +647,16 @@ async def choose_year_to_zapis_logic(
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        uslugi = await get_uslugi(session)
-        if not uslugi:
-            return _to_main_menu_result(messages.NO_USLUGI)
+        services = await get_services(session)
+        if not services:
+            return _to_main_menu_result(messages.NO_SERVICES)
         else:
-            uslugi_na_zapis = {str(pos): usluga.name for pos, usluga in enumerate(uslugi, start=1)}
-            message_to_send_1 = _show_uslugi(uslugi, back_main_keyboard, show_duration=False)
-            message_to_send_2 = MessageToAnswer( messages.CHOOSE_USLUGA_TO_ZAPIS, back_main_keyboard)
+            services_for_appointment = {str(pos): service.name for pos, service in enumerate(services, start=1)}
+            message_to_send_1 = _show_services(services, back_main_keyboard, show_duration=False)
+            message_to_send_2 = MessageToAnswer( messages.CHOOSE_SERVICE_TO_MAKE_APPOINTMENT, back_main_keyboard)
             messages_to_answer = [message_to_send_1, message_to_send_2]
-            state_to_set = ZapisNaPriem.choose_usluga
-            data_to_set = {"uslugi_na_zapis": uslugi_na_zapis}
+            state_to_set = MakeAppointment.choose_service
+            data_to_set = {"services_for_appointment": services_for_appointment}
             return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
     elif upper_text == MAIN_MENU.upper():
         return _to_main_menu_result()
@@ -679,7 +679,7 @@ async def choose_year_to_zapis_logic(
                     get_months_keyboard(months_to_choose),
                 ),
             ]
-            state_to_set = ZapisNaPriem.choose_month
+            state_to_set = MakeAppointment.choose_month
             data_to_update = {
                 "chosen_year": chosen_year,
                 "months_to_choose": months_to_choose,
@@ -691,7 +691,7 @@ async def choose_year_to_zapis_logic(
             )
 
 
-async def choose_month_to_zapis_logic(user_input: str, state_data: dict) -> LogicResult:
+async def choose_month_for_appointment_logic(user_input: str, state_data: dict) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
@@ -703,7 +703,7 @@ async def choose_month_to_zapis_logic(user_input: str, state_data: dict) -> Logi
                 get_years_keyboard(years_to_choose),
             ),
         ]
-        state_to_set = ZapisNaPriem.choose_year
+        state_to_set = MakeAppointment.choose_year
         data_to_update = {"years_to_choose": years_to_choose}
         return _get_logic_result(
             messages_to_answer,
@@ -732,7 +732,7 @@ async def choose_month_to_zapis_logic(user_input: str, state_data: dict) -> Logi
                     get_days_keyboard(days_to_choose),
                 ),
             ]
-            state_to_set = ZapisNaPriem.choose_day
+            state_to_set = MakeAppointment.choose_day
             data_to_update = {
                 "chosen_month": chosen_month,
                 "days_to_choose": days_to_choose,
@@ -744,7 +744,7 @@ async def choose_month_to_zapis_logic(user_input: str, state_data: dict) -> Logi
             )
 
 
-async def choose_day_to_zapis_logic(
+async def choose_day_for_appointment_logic(
     user_input: str,
     state_data: dict,
     session: AsyncSession,
@@ -760,7 +760,7 @@ async def choose_day_to_zapis_logic(
                 get_months_keyboard(months_to_choose),
             ),
         ]
-        state_to_set = ZapisNaPriem.choose_month
+        state_to_set = MakeAppointment.choose_month
         data_to_update = {"months_to_choose": months_to_choose}
         return _get_logic_result(
             messages_to_answer,
@@ -780,13 +780,13 @@ async def choose_day_to_zapis_logic(
             ]
             return _get_logic_result(messages_to_answer)
         else:
-            chosen_usluga_name = state_data["chosen_usluga_name"]
+            chosen_service_name = state_data["chosen_service_name"]
             chosen_year = state_data["chosen_year"]
             chosen_month = state_data["chosen_month"]
             chosen_day = int(text)
             times_to_choose = get_available_times(
                 session,
-                chosen_usluga_name,
+                chosen_service_name,
                 chosen_year,
                 chosen_month, chosen_day,
             )
@@ -796,7 +796,7 @@ async def choose_day_to_zapis_logic(
                     get_times_keyboard(times_to_choose),
                 ),
             ]
-            state_to_set = ZapisNaPriem.choose_time
+            state_to_set = MakeAppointment.choose_time
             data_to_update = {
                 "chosen_day": chosen_day,
                 "times_to_choose": times_to_choose,
@@ -808,7 +808,7 @@ async def choose_day_to_zapis_logic(
             )
 
 
-async def choose_time_to_zapis_logic(
+async def choose_time_for_appointment_logic(
     user_input: str,
     user_id: int,
     state_data: dict,
@@ -826,7 +826,7 @@ async def choose_time_to_zapis_logic(
                 get_days_keyboard(days_to_choose),
             ),
         ]
-        state_to_set = ZapisNaPriem.choose_day
+        state_to_set = MakeAppointment.choose_day
         data_to_update = {"days_to_choose": days_to_choose}
         return _get_logic_result(
             messages_to_answer,
@@ -846,8 +846,8 @@ async def choose_time_to_zapis_logic(
             ]
             return _get_logic_result(messages_to_answer)
         else:
-            chosen_usluga_name = state_data["chosen_usluga_name"]
-            [chosen_usluga] = await get_uslugi(session, filter_by={"name": chosen_usluga_name})
+            chosen_service_name = state_data["chosen_service_name"]
+            [chosen_service] = await get_services(session, filter_by={"name": chosen_service_name})
             chosen_year = state_data["chosen_year"]
             chosen_month = months_swapped[state_data["chosen_month"]]
             chosen_day = state_data["chosen_day"]
@@ -860,31 +860,31 @@ async def choose_time_to_zapis_logic(
                 start_time.hour,
                 start_time.minute,
             )
-            ends_at = starts_at + timedelta(minutes=chosen_usluga.duration)
-            zapis = Zapis(
+            ends_at = starts_at + timedelta(minutes=chosen_service.duration)
+            appointment = Appointment(
                 client_id=user_id,
-                usluga_id=chosen_usluga.usluga_id,
+                service_id=chosen_service.service_id,
                 starts_at=starts_at,
                 ends_at=ends_at,
             )
-            await insert_zapis(session, zapis)
+            await insert_appointment(session, appointment)
             messages_to_answer = [
                 MessageToAnswer(
-                    messages.ZAPIS_SAVED.format(
-                        zapis_view=form_zapis_view(zapis, with_date=True, for_admin=False),
+                    messages.APPOINTMENT_SAVED.format(
+                        appointment_view=form_appointment_view(appointment, with_date=True, for_admin=False),
                     ),
-                    zapisi_keyboard,
+                    appointments_keyboard,
                 ),
             ]
             messages_to_send = [
                 MessageToSend(
                     user_id=ADMIN_TG_ID,
-                    text=messages.NEW_ZAPIS_CREATED.format(
-                        zapis_view=form_zapis_view(zapis, with_date=True, for_admin=True),
+                    text=messages.NEW_APPOINTMENT_CREATED.format(
+                        appointment_view=form_appointment_view(appointment, with_date=True, for_admin=True),
                     ),
                 ),
             ]
-            state_to_set = ZapisNaPriem.choose_action
+            state_to_set = MakeAppointment.choose_action
             return _get_logic_result(
                 messages_to_answer,
                 state_to_set,

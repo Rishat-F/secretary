@@ -2,127 +2,127 @@ from aiogram import Dispatcher, F
 from aiogram.enums import ChatType
 
 from src.handlers.handlers import (
-    choose_day_to_zapis,
-    choose_month_to_zapis,
-    choose_time_to_zapis,
-    choose_usluga_field_to_update,
-    choose_usluga_to_delete,
-    choose_usluga_to_update,
-    choose_usluga_to_zapis,
-    choose_uslugi_action,
-    choose_year_to_zapis,
-    choose_zapisi_action,
-    set_usluga_duration,
-    set_usluga_name,
-    set_usluga_new_duration,
-    set_usluga_new_name,
-    set_usluga_new_price,
-    set_usluga_price,
+    choose_day_for_appointment,
+    choose_month_for_appointment,
+    choose_time_for_appointment,
+    choose_service_field_to_update,
+    choose_service_to_delete,
+    choose_service_to_update,
+    choose_service_for_appointment,
+    choose_services_action,
+    choose_year_for_appointment,
+    choose_appointments_action,
+    set_service_duration,
+    set_service_name,
+    set_service_new_duration,
+    set_service_new_name,
+    set_service_new_price,
+    set_service_price,
     start_bot,
-    uslugi,
-    zapisi,
+    services,
+    appointments,
 )
 from src.keyboards import USLUGI, ZAPISI
 from src.secrets import ADMIN_TG_ID
-from src.states import UslugiActions, ZapisNaPriem
+from src.states import ServicesActions, MakeAppointment
 
 
 def register_handlers(dp: Dispatcher) -> None:
     """Регистрация обработчиков."""
     dp.message.register(
-        choose_zapisi_action,
+        choose_appointments_action,
         F.chat.id != ADMIN_TG_ID,
-        ZapisNaPriem.choose_action,
+        MakeAppointment.choose_action,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_usluga_to_zapis,
+        choose_service_for_appointment,
         F.chat.id != ADMIN_TG_ID,
-        ZapisNaPriem.choose_usluga,
+        MakeAppointment.choose_service,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_year_to_zapis,
+        choose_year_for_appointment,
         F.chat.id != ADMIN_TG_ID,
-        ZapisNaPriem.choose_year,
+        MakeAppointment.choose_year,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_month_to_zapis,
+        choose_month_for_appointment,
         F.chat.id != ADMIN_TG_ID,
-        ZapisNaPriem.choose_month,
+        MakeAppointment.choose_month,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_day_to_zapis,
+        choose_day_for_appointment,
         F.chat.id != ADMIN_TG_ID,
-        ZapisNaPriem.choose_day,
+        MakeAppointment.choose_day,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_time_to_zapis,
+        choose_time_for_appointment,
         F.chat.id != ADMIN_TG_ID,
-        ZapisNaPriem.choose_time,
+        MakeAppointment.choose_time,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_uslugi_action,
+        choose_services_action,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.choose_action,
+        ServicesActions.choose_action,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        set_usluga_name,
+        set_service_name,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.set_name,
+        ServicesActions.set_name,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        set_usluga_price,
+        set_service_price,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.set_price,
+        ServicesActions.set_price,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        set_usluga_duration,
+        set_service_duration,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.set_duration,
+        ServicesActions.set_duration,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_usluga_to_delete,
+        choose_service_to_delete,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.choose_usluga_to_delete,
+        ServicesActions.choose_service_to_delete,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_usluga_to_update,
+        choose_service_to_update,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.choose_usluga_to_update,
+        ServicesActions.choose_service_to_update,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        choose_usluga_field_to_update,
+        choose_service_field_to_update,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.choose_usluga_field_to_update,
+        ServicesActions.choose_service_field_to_update,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        set_usluga_new_name,
+        set_service_new_name,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.set_new_name,
+        ServicesActions.set_new_name,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        set_usluga_new_price,
+        set_service_new_price,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.set_new_price,
+        ServicesActions.set_new_price,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
-        set_usluga_new_duration,
+        set_service_new_duration,
         F.chat.id == ADMIN_TG_ID,
-        UslugiActions.set_new_duration,
+        ServicesActions.set_new_duration,
         F.chat.type == ChatType.PRIVATE.value,
     )
     dp.message.register(
@@ -131,12 +131,12 @@ def register_handlers(dp: Dispatcher) -> None:
         F.text.lower().contains("/start"),
     )
     dp.message.register(
-        uslugi,
+        services,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == USLUGI.lower(),
     )
     dp.message.register(
-        zapisi,
+        appointments,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == ZAPISI.lower(),
     )

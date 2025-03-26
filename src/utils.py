@@ -5,28 +5,28 @@ from calendar import Calendar
 from datetime import date
 
 from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
-from src.messages import NO_USLUGI, NO_ZAPISI_FOR_ADMIN, NO_ZAPISI_FOR_CLIENT
-from src.models import Usluga, Zapis
+from src.messages import NO_SERVICES, NO_APPOINTMENTS_FOR_ADMIN, NO_APPOINTMENTS_FOR_CLIENT
+from src.models import Service, Appointment
 
-from src.exceptions import UslugaNameTooLongError
+from src.exceptions import ServiceNameTooLongError
 
 
 ValidationErrorMessage = str
 
 
-def form_usluga_view(usluga: Usluga, show_duration: bool) -> str:
-    view = f"<b>{usluga.name}</b>\n    <i>Стоимость: {usluga.price} руб.</i>\n"
+def form_service_view(service: Service, show_duration: bool) -> str:
+    view = f"<b>{service.name}</b>\n    <i>Стоимость: {service.price} руб.</i>\n"
     if show_duration:
-        view += f"    <i>Длительность: {usluga.duration} мин.</i>\n"
+        view += f"    <i>Длительность: {service.duration} мин.</i>\n"
     return view
 
 
-def form_uslugi_list_text(uslugi: list[Usluga], show_duration: bool) -> str:
+def form_services_list_text(services: list[Service], show_duration: bool) -> str:
     text = ""
-    for pos, usluga in enumerate(uslugi, start=1):
-        text += f"<b>{pos}.</b> {form_usluga_view(usluga, show_duration)}"
+    for pos, service in enumerate(services, start=1):
+        text += f"<b>{pos}.</b> {form_service_view(service, show_duration)}"
     if not text:
-        text = NO_USLUGI
+        text = NO_SERVICES
     return text.strip()
 
 
@@ -35,16 +35,16 @@ def preprocess_text(text: str) -> str:
     return text.strip()
 
 
-def validate_usluga_name(name: str) -> str:
+def validate_service_name(name: str) -> str:
     USLUGA_NAME_SHOULD_BE_SHORTER = (
         f"Название услуги должно содержать не более {USLUGA_NAME_MAX_LEN} символов"
     )
     if len(name) > USLUGA_NAME_MAX_LEN:
-        raise UslugaNameTooLongError(USLUGA_NAME_SHOULD_BE_SHORTER)
+        raise ServiceNameTooLongError(USLUGA_NAME_SHOULD_BE_SHORTER)
     return name
 
 
-def validate_usluga_price(price_input: str) -> int | ValidationErrorMessage:
+def validate_service_price(price_input: str) -> int | ValidationErrorMessage:
     PRICE_SHOULD_BE_INTEGER = "Цена должна быть целым числом"
     PRICE_SHOULD_BE_GT_0 = "Цена должна быть больше 0"
     try:
@@ -56,7 +56,7 @@ def validate_usluga_price(price_input: str) -> int | ValidationErrorMessage:
     return price
 
 
-def validate_usluga_duration(duration_input: str) -> int | ValidationErrorMessage:
+def validate_service_duration(duration_input: str) -> int | ValidationErrorMessage:
     DURATION_SHOULD_BE_INTEGER = "Длительность должна быть целым числом"
     DURATION_SHOULD_BE_GT_0 = "Длительность должна быть больше 0"
     DURATION_MUST_BE_A_MULTIPLE_OF_N = (
@@ -139,40 +139,40 @@ def get_available_times(*_) -> list[str]:
     return available_times
 
 
-def form_zapis_view(zapis: Zapis, with_date: bool, for_admin: bool) -> str:
+def form_appointment_view(appointment: Appointment, with_date: bool, for_admin: bool) -> str:
     view = ""
     if with_date:
-        date_ = zapis.starts_at.strftime("%d.%m.%Y")
+        date_ = appointment.starts_at.strftime("%d.%m.%Y")
         view += f"<b>{date_}</b>\n"
-    start_time = zapis.starts_at.strftime("%H:%M")
-    if zapis.usluga is None:
-        usluga_name = "Уже удаленная услуга"
+    start_time = appointment.starts_at.strftime("%H:%M")
+    if appointment.service is None:
+        service_name = "Уже удаленная услуга"
     else:
-        usluga_name = zapis.usluga.name
+        service_name = appointment.service.name
     if for_admin:
-        end_time = zapis.ends_at.strftime("%H:%M")
-        view += f"    <i>{start_time} - {end_time}</i>  {usluga_name}\n"
+        end_time = appointment.ends_at.strftime("%H:%M")
+        view += f"    <i>{start_time} - {end_time}</i>  {service_name}\n"
     else:
-        view += f"    <i>{start_time}</i>  {usluga_name}\n"
+        view += f"    <i>{start_time}</i>  {service_name}\n"
     return view
 
 
-def form_zapisi_list_text(zapisi: list[Zapis], for_admin: bool) -> str:
-    zapisi_dict = dict()
-    for zapis in zapisi:
-        date_ = zapis.starts_at.strftime("%d.%m.%Y")
-        if date_ in zapisi_dict:
-            zapisi_dict[date_].append(zapis)
+def form_appointments_list_text(appointments: list[Appointment], for_admin: bool) -> str:
+    appointments_dict = dict()
+    for appointment in appointments:
+        date_ = appointment.starts_at.strftime("%d.%m.%Y")
+        if date_ in appointments_dict:
+            appointments_dict[date_].append(appointment)
         else:
-            zapisi_dict[date_] = [zapis]
+            appointments_dict[date_] = [appointment]
     text = ""
-    for date_, zapisi_ in zapisi_dict.items():
+    for date_, appointments_ in appointments_dict.items():
         text += f"<b>{date_}</b>\n"
-        for zapis in zapisi_:
-            text += f"{form_zapis_view(zapis, with_date=False, for_admin=for_admin)}"
+        for appointment in appointments_:
+            text += f"{form_appointment_view(appointment, with_date=False, for_admin=for_admin)}"
     if not text:
         if for_admin:
-            text = NO_ZAPISI_FOR_ADMIN
+            text = NO_APPOINTMENTS_FOR_ADMIN
         else:
-            text = NO_ZAPISI_FOR_CLIENT
+            text = NO_APPOINTMENTS_FOR_CLIENT
     return text.strip()
