@@ -1,9 +1,9 @@
 """ORM модели."""
 
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, MetaData, String
+from sqlalchemy import Date, ForeignKey, Integer, MetaData, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from src.constraints import USLUGA_NAME_MAX_LEN
@@ -11,7 +11,7 @@ from src.constraints import USLUGA_NAME_MAX_LEN
 
 constraint_naming_conventions = {
     "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
     "ck": "ck_%(table_name)s_%(constraint_name)s",
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
@@ -77,15 +77,42 @@ class Appointment(Base):
         nullable=True,
         comment="Идентификатор услуги",
     )
-    starts_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        nullable=False,
-        comment="Дата и время начала приема (должно быть кратно 30 минутам)",
-    )
-    ends_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        nullable=False,
-        comment="Дата и время окончания приема (должно быть кратно 30 минутам)",
-    )
 
     service: Mapped[Optional["Service"]] = relationship(back_populates="appointments", lazy="joined")
+    slots: Mapped[list["Slot"]] = relationship(back_populates="appointment")
+
+
+class Slot(Base):
+    __tablename__ = "slot"
+    __table_args__ = (
+        UniqueConstraint("date_", "number"),
+        {"comment": "Слоты приема (30 минутные интервалы)"},
+    )
+
+    slot_id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        nullable=False,
+        autoincrement=True,
+        comment="Идентификатор слота",
+    )
+    date_: Mapped[date] = mapped_column(Date, nullable=False, comment="Дата слота")
+    number: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        comment=(
+            "Номер слота: "
+            "1 - 00:00 - 00:30, "
+            "2 - 00:30 - 01:00, "
+            "..., "
+            "47 - 23:00 - 23:30, "
+            "48 - 23:00 - 00:00"
+        ),
+    )
+    appointment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("appointment.appointment_id", ondelete="SET NULL"),
+        nullable=True,
+        comment="Идентификатор записи",
+    )
+
+    appointment: Mapped[Optional["Appointment"]] = relationship(back_populates="slots", lazy="joined")
