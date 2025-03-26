@@ -3,7 +3,16 @@
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import Date, ForeignKey, Integer, MetaData, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    UniqueConstraint,
+    false,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from src.constraints import USLUGA_NAME_MAX_LEN
@@ -51,6 +60,13 @@ class Service(Base):
         Integer,
         nullable=False,
         comment="Длительность предоставления услуги (в минутах, должно быть кратно 30)",
+    )
+    deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        comment="Удалена ли услуга",
+        default=False,
+        server_default=false(),
     )
 
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="service")
