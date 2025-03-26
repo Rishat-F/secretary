@@ -6,59 +6,59 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-from src.models import Usluga, Zapis
+from src.models import Service, Appointment
 
 
-async def get_uslugi(
+async def get_services(
     session: AsyncSession,
     filter_by: dict | None = None,
-) -> list[Usluga]:
+) -> list[Service]:
     if filter_by is None:
         filter_by = dict()
-    query = select(Usluga).filter_by(**filter_by).order_by(Usluga.name)
+    query = select(Service).filter_by(**filter_by).order_by(Service.name)
     result = await session.execute(query)
-    uslugi = result.scalars().all()
-    return list(uslugi)
+    services = result.scalars().all()
+    return list(services)
 
 
-async def insert_usluga(session: AsyncSession, usluga: Usluga) -> None:
-    session.add(usluga)
+async def insert_service(session: AsyncSession, service: Service) -> None:
+    session.add(service)
     await session.commit()
 
 
-async def update_usluga(
+async def update_service(
     session: AsyncSession,
-    usluga_name: str,
+    service_name: str,
     new_values: dict,
 ) -> None:
-    stmt = update(Usluga).where(Usluga.name == usluga_name).values(**new_values)
+    stmt = update(Service).where(Service.name == service_name).values(**new_values)
     await session.execute(stmt)
     await session.commit()
 
 
-async def delete_usluga(session: AsyncSession, name: str) -> None:
-    query = delete(Usluga).where(Usluga.name==name)
+async def delete_service(session: AsyncSession, name: str) -> None:
+    query = delete(Service).where(Service.name==name)
     await session.execute(query)
     await session.commit()
 
 
-async def get_active_zapisi(
+async def get_active_appointments(
     session: AsyncSession,
     filter_by: dict | None = None,
-) -> list[Zapis]:
+) -> list[Appointment]:
     if filter_by is None:
         filter_by = dict()
     query = (
-        select(Zapis)
+        select(Appointment)
         .filter_by(**filter_by)
-        .where(Zapis.starts_at > datetime.now())
-        .order_by(Zapis.starts_at)
+        .where(Appointment.starts_at > datetime.now())
+        .order_by(Appointment.starts_at)
     )
     result = await session.execute(query)
-    zapisi = result.scalars().all()
-    return list(zapisi)
+    appointments = result.scalars().all()
+    return list(appointments)
 
 
-async def insert_zapis(session: AsyncSession, zapis: Zapis) -> None:
-    session.add(zapis)
+async def insert_appointment(session: AsyncSession, appointment: Appointment) -> None:
+    session.add(appointment)
     await session.commit()

@@ -28,7 +28,7 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
-uslugi_keyboard = ReplyKeyboardMarkup(
+services_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [back_button, KeyboardButton(text=SHOW_ALL_USLUGI)],
         [
@@ -64,16 +64,16 @@ def _arrange_buttons(
     return arranged_buttons
 
 
-def get_uslugi_to_update_keyboard(names: list[str]) -> ReplyKeyboardMarkup:
+def get_services_to_update_keyboard(names: list[str]) -> ReplyKeyboardMarkup:
     keyboard = [
         [back_button, main_menu_button],
     ]
-    arranged_uslugi_names_buttons = _arrange_buttons(names, buttons_in_row=2)
-    keyboard.extend(arranged_uslugi_names_buttons)
+    arranged_services_names_buttons = _arrange_buttons(names, buttons_in_row=2)
+    keyboard.extend(arranged_services_names_buttons)
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
-usluga_fields_keyboard = ReplyKeyboardMarkup(
+service_fields_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [back_button, main_menu_button],
         [
@@ -85,7 +85,7 @@ usluga_fields_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
-set_usluga_new_field_keyboard = ReplyKeyboardMarkup(
+set_service_new_field_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [back_button, main_menu_button],
         [
@@ -134,7 +134,7 @@ def get_times_keyboard(times: list[str]) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
-zapisi_keyboard = ReplyKeyboardMarkup(
+appointments_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [back_button],
         [
