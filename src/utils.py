@@ -145,15 +145,11 @@ def form_appointment_view(appointment: Appointment, with_date: bool, for_admin: 
         date_ = appointment.starts_at.strftime("%d.%m.%Y")
         view += f"<b>{date_}</b>\n"
     start_time = appointment.starts_at.strftime("%H:%M")
-    if appointment.service is None:
-        service_name = "Уже удаленная услуга"
-    else:
-        service_name = appointment.service.name
     if for_admin:
         end_time = appointment.ends_at.strftime("%H:%M")
-        view += f"    <i>{start_time} - {end_time}</i>  {service_name}\n"
+        view += f"    <i>{start_time} - {end_time}</i>  {appointment.service.name}\n"
     else:
-        view += f"    <i>{start_time}</i>  {service_name}\n"
+        view += f"    <i>{start_time}</i>  {appointment.service.name}\n"
     return view
 
 
