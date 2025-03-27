@@ -48,7 +48,6 @@ class Service(Base):
     name: Mapped[str] = mapped_column(
         String(USLUGA_NAME_MAX_LEN),
         nullable=False,
-        unique=True,
         comment="Название услуги",
     )
     price: Mapped[int] = mapped_column(
@@ -88,13 +87,13 @@ class Appointment(Base):
         nullable=False,
         comment="Идентификатор клиента (телеграмм ID)",
     )
-    service_id: Mapped[int | None] = mapped_column(
-        ForeignKey("service.service_id", ondelete="SET NULL"),
-        nullable=True,
+    service_id: Mapped[int] = mapped_column(
+        ForeignKey("service.service_id", ondelete="RESTRICT"),
+        nullable=False,
         comment="Идентификатор услуги",
     )
 
-    service: Mapped[Optional["Service"]] = relationship(back_populates="appointments", lazy="joined")
+    service: Mapped["Service"] = relationship(back_populates="appointments", lazy="joined")
     slots: Mapped[list["Slot"]] = relationship(back_populates="appointment")
 
 

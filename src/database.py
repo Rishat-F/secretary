@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import and_, false, select, true, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -15,7 +15,12 @@ async def get_services(
 ) -> list[Service]:
     if filter_by is None:
         filter_by = dict()
-    query = select(Service).filter_by(**filter_by).order_by(Service.name)
+    query = (
+        select(Service)
+        .filter_by(**filter_by)
+        .where(Service.deleted == false())
+        .order_by(Service.name)
+    )
     result = await session.execute(query)
     services = result.scalars().all()
     return list(services)
@@ -31,14 +36,22 @@ async def update_service(
     service_name: str,
     new_values: dict,
 ) -> None:
-    stmt = update(Service).where(Service.name == service_name).values(**new_values)
+    stmt = (
+        update(Service)
+        .where(and_(Service.name == service_name, Service.deleted == false()))
+        .values(**new_values)
+    )
     await session.execute(stmt)
     await session.commit()
 
 
 async def delete_service(session: AsyncSession, name: str) -> None:
-    query = delete(Service).where(Service.name==name)
-    await session.execute(query)
+    stmt = (
+        update(Service)
+        .where(and_(Service.name == name, Service.deleted == false()))
+        .values(deleted=true())
+    )
+    await session.execute(stmt)
     await session.commit()
 
 
