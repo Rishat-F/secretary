@@ -1,11 +1,11 @@
 """ORM модели."""
 
-from datetime import date
-from typing import Optional
+from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
     Date,
+    DateTime,
     ForeignKey,
     Integer,
     MetaData,
@@ -91,6 +91,16 @@ class Appointment(Base):
         ForeignKey("service.service_id", ondelete="RESTRICT"),
         nullable=False,
         comment="Идентификатор услуги",
+    )
+    starts_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        comment="Дата и время начала приема (должно быть кратно 30 минутам)",
+    )
+    ends_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        comment="Дата и время окончания приема (должно быть кратно 30 минутам)",
     )
 
     service: Mapped["Service"] = relationship(back_populates="appointments", lazy="joined")
