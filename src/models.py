@@ -73,14 +73,14 @@ class Service(Base):
 
 class Appointment(Base):
     __tablename__ = "appointment"
-    __table_args__ = {"comment": "Запись на прием"}
+    __table_args__ = {"comment": "Прием (оказание услуги)"}
 
     appointment_id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         nullable=False,
         autoincrement=True,
-        comment="Идентификатор записи",
+        comment="Идентификатор приема (оказания услуги)",
     )
     client_id: Mapped[int] = mapped_column(
         Integer,
@@ -94,7 +94,6 @@ class Appointment(Base):
     )
 
     service: Mapped["Service"] = relationship(back_populates="appointments", lazy="joined")
-    slots: Mapped[list["Slot"]] = relationship(back_populates="appointment")
 
 
 class Slot(Base):
@@ -124,10 +123,20 @@ class Slot(Base):
             "48 - 23:00 - 00:00"
         ),
     )
-    appointment_id: Mapped[int | None] = mapped_column(
-        ForeignKey("appointment.appointment_id", ondelete="SET NULL"),
-        nullable=True,
-        comment="Идентификатор записи",
-    )
 
-    appointment: Mapped[Optional["Appointment"]] = relationship(back_populates="slots", lazy="joined")
+
+class Reservation(Base):
+    __tablename__ = "reservation"
+    __table_args__ = {"comment": "Бронирование (запись на прием)"}
+
+    slot_id: Mapped[int] = mapped_column(
+        ForeignKey("slot.slot_id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        comment="Идентификатор слота",
+    )
+    appointment_id: Mapped[int] = mapped_column(
+        ForeignKey("appointment.appointment_id", ondelete="CASCADE"),
+        nullable=False,
+        comment="Идентификатор приема (оказания услуги)",
+    )
