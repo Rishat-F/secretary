@@ -222,11 +222,16 @@ async def choose_appointments_action(
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
-async def choose_service_for_appointment(message: types.Message, state: FSMContext) -> None:
+async def choose_service_for_appointment(
+    message: types.Message,
+    async_session: async_sessionmaker[AsyncSession],
+    state: FSMContext,
+) -> None:
     if not message.text:
         return None
     data = await state.get_data()
-    result = await choose_service_for_appointment_logic(message.text, data)
+    async with async_session() as session:
+        result = await choose_service_for_appointment_logic(message.text, data, session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -251,16 +256,11 @@ async def choose_month_for_appointment(message: types.Message, state: FSMContext
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
-async def choose_day_for_appointment(
-    message: types.Message,
-    async_session: async_sessionmaker[AsyncSession],
-    state: FSMContext,
-) -> None:
+async def choose_day_for_appointment(message: types.Message, state: FSMContext) -> None:
     if not message.text:
         return None
     data = await state.get_data()
-    async with async_session() as session:
-        result = await choose_day_for_appointment_logic(message.text, data, session)
+    result = await choose_day_for_appointment_logic(message.text, data)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 

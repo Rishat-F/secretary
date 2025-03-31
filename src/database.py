@@ -1,12 +1,12 @@
 """Работа с базой данных."""
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import and_, select, update
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-from src.models import Service, Appointment
+from src.models import Appointment, Reservation, Service, Slot
 
 
 async def get_services(
@@ -74,4 +74,43 @@ async def get_active_appointments(
 
 async def insert_appointment(session: AsyncSession, appointment: Appointment) -> None:
     session.add(appointment)
+    await session.commit()
+
+
+async def get_available_slots(
+    session: AsyncSession,
+    current_date: date,
+    current_slot_number: int,
+) -> list[Slot]:
+    subquery = select(Reservation.slot_id)
+    query = (
+        select(Slot)
+        .where(
+            and_(
+                or_(
+                    and_(
+                        Slot.date_ == current_date,
+                        Slot.number > current_slot_number
+                    ),
+                    Slot.date_ > current_date,
+                ),
+                Slot.slot_id.not_in(subquery),
+            )
+        )
+        .order_by(Slot.date_, Slot.number)
+    )
+    result = await session.execute(query)
+    slots = result.scalars().all()
+    return list(slots)
+
+
+async def insert_reservations(
+    session: AsyncSession,
+    slots_ids_to_reserve: list[int],
+    appointment_id: int,
+) -> None:
+    reservations = []
+    for slot_id in slots_ids_to_reserve:
+        reservations.append(Reservation(slot_id=slot_id, appointment_id=appointment_id))
+    session.add_all(reservations)
     await session.commit()
