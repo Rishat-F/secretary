@@ -8,13 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src import messages
 from src.database import (
     delete_service,
+    get_available_slots,
     get_services,
     get_active_appointments,
+    insert_reservations,
     insert_service,
     insert_appointment,
     update_service,
 )
 from src.exceptions import ServiceNameTooLongError
+from src.handlers.business_logic import get_times_possible_for_appointment
 from src.keyboards import (
     BACK,
     CREATE,
@@ -48,9 +51,12 @@ from src.utils import (
     form_services_list_text,
     form_appointment_view,
     form_appointments_list_text,
-    get_available_times,
+    get_slot_number_from_time,
+    get_slots_ids_to_reserve,
+    get_times,
     get_days,
     get_months,
+    get_years,
     months_swapped,
     preprocess_text,
     validate_service_duration,
@@ -606,7 +612,11 @@ async def choose_appointments_action_logic(
         return _get_logic_result(messages_to_answer)
 
 
-async def choose_service_for_appointment_logic(user_input: str, state_data: dict) -> LogicResult:
+async def choose_service_for_appointment_logic(
+    user_input: str,
+    state_data: dict,
+    session: AsyncSession,
+) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
@@ -623,20 +633,44 @@ async def choose_service_for_appointment_logic(user_input: str, state_data: dict
             messages_to_answer = [ MessageToAnswer(messages.CHOOSE_SERVICE_TO_MAKE_APPOINTMENT, back_main_keyboard) ]
             return _get_logic_result(messages_to_answer)
         else:
-            current_year = datetime.today().year
-            years_to_choose = [current_year, (current_year + 1)]
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_YEAR,
-                    get_years_keyboard(years_to_choose),
-                ),
-            ]
-            state_to_set = MakeAppointment.choose_year
-            data_to_set = {
-                "chosen_service_name": service_name_for_appointment,
-                "years_to_choose": years_to_choose,
-            }
-            return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
+            services = await get_services(session, filter_by={"name": service_name_for_appointment})
+            if not services:
+                messages_to_answer = [
+                    MessageToAnswer(
+                        messages.NO_SUCH_SERVICE.format(name=service_name_for_appointment),
+                        back_main_keyboard,
+                    ),
+                ]
+                return _get_logic_result(messages_to_answer)
+            [service] = services
+            now_ = datetime.now()
+            current_date = now_.date()
+            current_slot_number = get_slot_number_from_time(now_.time().isoformat(timespec="minutes"))
+            slots = await get_available_slots(session, current_date, current_slot_number)
+            times_dict = await get_times_possible_for_appointment(service, slots)
+            if not times_dict:
+                messages_to_answer = [
+                    MessageToAnswer(
+                        messages.NO_POSSIBLE_TIMES_FOR_SERVICE.format(name=service.name),
+                        back_main_keyboard,
+                    ),
+                ]
+                return _get_logic_result(messages_to_answer)
+            else:
+                years_to_choose = get_years(times_dict)
+                messages_to_answer = [
+                    MessageToAnswer(
+                        messages.CHOOSE_YEAR,
+                        get_years_keyboard(years_to_choose),
+                    ),
+                ]
+                state_to_set = MakeAppointment.choose_year
+                data_to_set = {
+                    "chosen_service_name": service.name,
+                    "years_to_choose": years_to_choose,
+                    "times_dict": times_dict,
+                }
+                return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
 
 
 async def choose_year_for_appointment_logic(
@@ -671,8 +705,9 @@ async def choose_year_for_appointment_logic(
             ]
             return _get_logic_result(messages_to_answer)
         else:
+            times_dict = state_data["times_dict"]
             chosen_year = int(text)
-            months_to_choose = get_months(chosen_year)
+            months_to_choose = get_months(times_dict, chosen_year)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.CHOOSE_MONTH,
@@ -695,8 +730,8 @@ async def choose_month_for_appointment_logic(user_input: str, state_data: dict) 
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        current_year = datetime.today().year
-        years_to_choose = [current_year, (current_year + 1)]
+        times_dict = state_data["times_dict"]
+        years_to_choose = get_years(times_dict)
         messages_to_answer = [
             MessageToAnswer(
                 messages.CHOOSE_YEAR,
@@ -723,9 +758,10 @@ async def choose_month_for_appointment_logic(user_input: str, state_data: dict) 
             ]
             return _get_logic_result(messages_to_answer)
         else:
+            times_dict = state_data["times_dict"]
             chosen_year = state_data["chosen_year"]
             chosen_month = text
-            days_to_choose = get_days(chosen_year, chosen_month)
+            days_to_choose = get_days(times_dict, chosen_year, chosen_month)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.CHOOSE_DAY,
@@ -744,16 +780,13 @@ async def choose_month_for_appointment_logic(user_input: str, state_data: dict) 
             )
 
 
-async def choose_day_for_appointment_logic(
-    user_input: str,
-    state_data: dict,
-    session: AsyncSession,
-) -> LogicResult:
+async def choose_day_for_appointment_logic(user_input: str, state_data: dict) -> LogicResult:
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        current_year = datetime.today().year
-        months_to_choose = get_months(current_year)
+        times_dict = state_data["times_dict"]
+        chosen_year = state_data["chosen_year"]
+        months_to_choose = get_months(times_dict, chosen_year)
         messages_to_answer = [
             MessageToAnswer(
                 messages.CHOOSE_MONTH,
@@ -780,15 +813,15 @@ async def choose_day_for_appointment_logic(
             ]
             return _get_logic_result(messages_to_answer)
         else:
-            chosen_service_name = state_data["chosen_service_name"]
+            times_dict = state_data["times_dict"]
             chosen_year = state_data["chosen_year"]
             chosen_month = state_data["chosen_month"]
             chosen_day = int(text)
-            times_to_choose = get_available_times(
-                session,
-                chosen_service_name,
+            times_to_choose = get_times(
+                times_dict,
                 chosen_year,
-                chosen_month, chosen_day,
+                chosen_month,
+                chosen_day,
             )
             messages_to_answer = [
                 MessageToAnswer(
@@ -817,9 +850,10 @@ async def choose_time_for_appointment_logic(
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
+        times_dict = state_data["times_dict"]
         chosen_year = state_data["chosen_year"]
         chosen_month = state_data["chosen_month"]
-        days_to_choose = get_days(chosen_year, chosen_month)
+        days_to_choose = get_days(times_dict, chosen_year, chosen_month)
         messages_to_answer = [
             MessageToAnswer(
                 messages.CHOOSE_DAY,
@@ -846,6 +880,7 @@ async def choose_time_for_appointment_logic(
             ]
             return _get_logic_result(messages_to_answer)
         else:
+            times_dict = state_data["times_dict"]
             chosen_service_name = state_data["chosen_service_name"]
             [chosen_service] = await get_services(session, filter_by={"name": chosen_service_name})
             chosen_year = state_data["chosen_year"]
@@ -867,7 +902,9 @@ async def choose_time_for_appointment_logic(
                 starts_at=starts_at,
                 ends_at=ends_at,
             )
+            slots_ids_to_reserve = get_slots_ids_to_reserve(times_dict, starts_at)
             await insert_appointment(session, appointment)
+            await insert_reservations(session, slots_ids_to_reserve, appointment.appointment_id)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.APPOINTMENT_SAVED.format(

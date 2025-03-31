@@ -1,8 +1,7 @@
 """Вспомогательные функции."""
 
 import re
-from calendar import Calendar
-from datetime import date
+from datetime import datetime, time
 
 from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
 from src.messages import NO_SERVICES, NO_APPOINTMENTS_FOR_ADMIN, NO_APPOINTMENTS_FOR_CLIENT
@@ -73,6 +72,11 @@ def validate_service_duration(duration_input: str) -> int | ValidationErrorMessa
     return duration
 
 
+def get_years(slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]]) -> list[int]:
+    years = sorted(slots.keys())
+    return years
+
+
 _months = {
     1: "Январь",
     2: "Февраль",
@@ -90,53 +94,33 @@ _months = {
 months_swapped = {value: key for key, value in _months.items()}
 
 
-def get_months(year: int) -> list[str]:
-    today = date.today()
-    if year == today.year:
-        current_month_num = today.month
-        result = []
-        for num, name in _months.items():
-            if num >= current_month_num:
-                result.append(name)
-        return result
-    else:
-        return list(_months.values())
+def get_months(
+    slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    year: int,
+) -> list[str]:
+    months = [_months[month_num] for month_num in slots[year].keys()]
+    return months
 
 
-def get_days(year: int, month: str) -> list[int]:
+def get_days(
+    slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    year: int,
+    month: str,
+) -> list[int]:
     month_num = months_swapped[month]
-    today = date.today()
-    calendar = Calendar()
-    if month_num == today.month:
-        days = [
-            number for number in calendar.itermonthdays(year, month_num)
-            if (number != 0 and number >= today.day)
-        ]
-    else:
-        days = [
-            number for number in calendar.itermonthdays(year, month_num)
-            if number != 0
-        ]
+    days = list(slots[year][month_num].keys())
     return days
 
 
-def get_available_times(*_) -> list[str]:
-    all_times = [
-        "00:00", "00:30", "01:00", "01:30",
-        "02:00", "02:30", "03:00", "03:30",
-        "04:00", "04:30", "05:00", "05:30",
-        "06:00", "06:30", "07:00", "07:30",
-        "08:00", "08:30", "09:00", "09:30",
-        "10:00", "10:30", "11:00", "11:30",
-        "12:00", "12:30", "13:00", "13:30",
-        "14:00", "14:30", "15:00", "15:30",
-        "16:00", "16:30", "17:00", "17:30",
-        "18:00", "18:30", "19:00", "19:30",
-        "20:00", "20:30", "21:00", "21:30",
-        "22:00", "22:30", "23:00", "23:30",
-    ]
-    available_times = all_times
-    return available_times
+def get_times(
+    slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    year: int,
+    month: str,
+    day: int,
+) -> list[str]:
+    month_num = months_swapped[month]
+    times = list(slots[year][month_num][day].keys())
+    return times
 
 
 def form_appointment_view(appointment: Appointment, with_date: bool, for_admin: bool) -> str:
@@ -172,3 +156,62 @@ def form_appointments_list_text(appointments: list[Appointment], for_admin: bool
         else:
             text = NO_APPOINTMENTS_FOR_CLIENT
     return text.strip()
+
+
+def get_slot_number_from_time(time_iso: str) -> int:
+    time_ = time.fromisoformat(time_iso)
+    total_minutes = 60 * time_.hour + time_.minute
+    slot_number = total_minutes // DURATION_MULTIPLIER + 1
+    return slot_number
+
+
+def _get_iso_time_from_slot_number(slot_number: int) -> str:
+    total_minutes = (slot_number - 1) * DURATION_MULTIPLIER
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    time_ = time(hours, minutes)
+    return time_.isoformat(timespec="minutes")
+
+
+def get_slot_numbers_needed_for_appointment(
+    start_slot_number:int,
+    service_duration: int,
+) -> list[int]:
+    slots_numbers = [start_slot_number]
+    slots_needed = int(service_duration / DURATION_MULTIPLIER)
+    for i in range(1, slots_needed):
+        slots_numbers.append(start_slot_number + i)
+    return slots_numbers
+
+
+def get_times_for_appointment(
+    slots_ids_numbers: list[tuple[int, int]],
+    service_duration: int,
+) -> dict[str, list[int]]:
+    possible_times = {}
+    slots_numbers = [item[1] for item in slots_ids_numbers]
+    for _, slot_number in slots_ids_numbers:
+        needed_slots_numbers = get_slot_numbers_needed_for_appointment(slot_number, service_duration)
+        if all([needed_slot_number in slots_numbers for needed_slot_number in needed_slots_numbers]):
+            time_ = _get_iso_time_from_slot_number(slot_number)
+            needed_slots_ids = []
+            for needed_slot_number in needed_slots_numbers:
+                for slot_id_, slot_number_ in slots_ids_numbers:
+                    if slot_number_ == needed_slot_number:
+                        needed_slots_ids.append(slot_id_)
+                        break
+            if needed_slots_ids:
+                possible_times[time_] = needed_slots_ids
+    return possible_times
+
+
+def get_slots_ids_to_reserve(
+    times_dict: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    starts_at: datetime,
+) -> list[int]:
+    year = starts_at.year
+    month = starts_at.month
+    day = starts_at.day
+    iso_time = starts_at.time().isoformat(timespec="minutes")
+    slots_ids = times_dict[year][month][day][iso_time]
+    return slots_ids
