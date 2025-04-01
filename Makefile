@@ -9,11 +9,3 @@ secretary_down:
 .PHONY: lint
 lint:
 	ruff check src
-
-.PHONY: migrations
-migrations:
-	alembic upgrade head
-
-.PHONY: check_migration_need
-check_migration_need: migrations
-	alembic check
