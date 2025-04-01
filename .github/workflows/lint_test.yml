@@ -30,4 +30,4 @@ jobs:
         run: make lint
 
       - name: Прогон тестов
-        run: exit 0
+        run: pytest
