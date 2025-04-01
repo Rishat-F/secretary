@@ -51,8 +51,7 @@ from src.utils import (
     form_services_list_text,
     form_appointment_view,
     form_appointments_list_text,
-    get_slot_number_from_time,
-    get_slots_ids_to_reserve,
+    get_datetimes_needed_for_appointment,
     get_times,
     get_days,
     get_months,
@@ -644,9 +643,7 @@ async def choose_service_for_appointment_logic(
                 return _get_logic_result(messages_to_answer)
             [service] = services
             now_ = datetime.now()
-            current_date = now_.date()
-            current_slot_number = get_slot_number_from_time(now_.time().isoformat(timespec="minutes"))
-            slots = await get_available_slots(session, current_date, current_slot_number)
+            slots = await get_available_slots(session, now_)
             times_dict = await get_times_possible_for_appointment(service, slots)
             if not times_dict:
                 messages_to_answer = [
@@ -902,9 +899,9 @@ async def choose_time_for_appointment_logic(
                 starts_at=starts_at,
                 ends_at=ends_at,
             )
-            slots_ids_to_reserve = get_slots_ids_to_reserve(times_dict, starts_at)
+            datetimes_to_reserve = get_datetimes_needed_for_appointment(starts_at, chosen_service.duration)
             await insert_appointment(session, appointment)
-            await insert_reservations(session, slots_ids_to_reserve, appointment.appointment_id)
+            await insert_reservations(session, datetimes_to_reserve, appointment.appointment_id)
             messages_to_answer = [
                 MessageToAnswer(
                     messages.APPOINTMENT_SAVED.format(
