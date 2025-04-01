@@ -1,16 +1,14 @@
 """ORM модели."""
 
-from datetime import date, datetime
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
-    Date,
     DateTime,
     ForeignKey,
     Integer,
     MetaData,
     String,
-    UniqueConstraint,
     false,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -108,42 +106,25 @@ class Appointment(Base):
 
 class Slot(Base):
     __tablename__ = "slot"
-    __table_args__ = (
-        UniqueConstraint("date_", "number"),
-        {"comment": "Слоты приема (30 минутные интервалы)"},
-    )
+    __table_args__ = {"comment": "Слоты приема (30 минутные интервалы)"}
 
-    slot_id: Mapped[int] = mapped_column(
-        Integer,
+    datetime_: Mapped[datetime] = mapped_column(
+        DateTime,
         primary_key=True,
         nullable=False,
-        autoincrement=True,
-        comment="Идентификатор слота",
-    )
-    date_: Mapped[date] = mapped_column(Date, nullable=False, comment="Дата слота")
-    number: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        comment=(
-            "Номер слота: "
-            "1 - 00:00 - 00:30, "
-            "2 - 00:30 - 01:00, "
-            "..., "
-            "47 - 23:00 - 23:30, "
-            "48 - 23:00 - 00:00"
-        ),
+        comment="Дата и время слота",
     )
 
 
 class Reservation(Base):
     __tablename__ = "reservation"
-    __table_args__ = {"comment": "Бронирование (запись на прием)"}
+    __table_args__ = {"comment": "Бронирование слотов (запись на прием)"}
 
-    slot_id: Mapped[int] = mapped_column(
-        ForeignKey("slot.slot_id", ondelete="CASCADE"),
+    datetime_: Mapped[datetime] = mapped_column(
+        ForeignKey("slot.datetime_", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        comment="Идентификатор слота",
+        comment="Дата и время слота",
     )
     appointment_id: Mapped[int] = mapped_column(
         ForeignKey("appointment.appointment_id", ondelete="CASCADE"),
