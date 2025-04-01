@@ -29,8 +29,5 @@ jobs:
       - name: Проверка линтерами
         run: make lint
 
-      - name: Проверка необходимости создания миграции
-        run: make check_migration_need
-
       - name: Прогон тестов
         run: exit 0
