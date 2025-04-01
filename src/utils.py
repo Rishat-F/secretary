@@ -1,7 +1,7 @@
 """Вспомогательные функции."""
 
 import re
-from datetime import datetime, time
+from datetime import datetime, timedelta
 
 from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
 from src.messages import NO_SERVICES, NO_APPOINTMENTS_FOR_ADMIN, NO_APPOINTMENTS_FOR_CLIENT
@@ -72,7 +72,7 @@ def validate_service_duration(duration_input: str) -> int | ValidationErrorMessa
     return duration
 
 
-def get_years(slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]]) -> list[int]:
+def get_years(slots: dict[int, dict[int, dict[int, list[str]]]]) -> list[int]:
     years = sorted(slots.keys())
     return years
 
@@ -95,7 +95,7 @@ months_swapped = {value: key for key, value in _months.items()}
 
 
 def get_months(
-    slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    slots: dict[int, dict[int, dict[int, list[str]]]],
     year: int,
 ) -> list[str]:
     months = [_months[month_num] for month_num in slots[year].keys()]
@@ -103,7 +103,7 @@ def get_months(
 
 
 def get_days(
-    slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    slots: dict[int, dict[int, dict[int, list[str]]]],
     year: int,
     month: str,
 ) -> list[int]:
@@ -113,13 +113,13 @@ def get_days(
 
 
 def get_times(
-    slots: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
+    slots: dict[int, dict[int, dict[int, list[str]]]],
     year: int,
     month: str,
     day: int,
 ) -> list[str]:
     month_num = months_swapped[month]
-    times = list(slots[year][month_num][day].keys())
+    times = slots[year][month_num][day]
     return times
 
 
@@ -158,60 +158,21 @@ def form_appointments_list_text(appointments: list[Appointment], for_admin: bool
     return text.strip()
 
 
-def get_slot_number_from_time(time_iso: str) -> int:
-    time_ = time.fromisoformat(time_iso)
-    total_minutes = 60 * time_.hour + time_.minute
-    slot_number = total_minutes // DURATION_MULTIPLIER + 1
-    return slot_number
-
-
-def _get_iso_time_from_slot_number(slot_number: int) -> str:
-    total_minutes = (slot_number - 1) * DURATION_MULTIPLIER
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-    time_ = time(hours, minutes)
-    return time_.isoformat(timespec="minutes")
-
-
-def get_slot_numbers_needed_for_appointment(
-    start_slot_number:int,
-    service_duration: int,
-) -> list[int]:
-    slots_numbers = [start_slot_number]
-    slots_needed = int(service_duration / DURATION_MULTIPLIER)
+def get_datetimes_needed_for_appointment(starts_at: datetime, duration: int) -> list[datetime]:
+    needed_datetimes = [starts_at]
+    slots_needed = int(duration / DURATION_MULTIPLIER)
     for i in range(1, slots_needed):
-        slots_numbers.append(start_slot_number + i)
-    return slots_numbers
+        needed_datetimes.append(starts_at + timedelta(minutes=DURATION_MULTIPLIER * i))
+    return needed_datetimes
 
 
 def get_times_for_appointment(
-    slots_ids_numbers: list[tuple[int, int]],
+    slots_datetimes: list[datetime],
     service_duration: int,
-) -> dict[str, list[int]]:
-    possible_times = {}
-    slots_numbers = [item[1] for item in slots_ids_numbers]
-    for _, slot_number in slots_ids_numbers:
-        needed_slots_numbers = get_slot_numbers_needed_for_appointment(slot_number, service_duration)
-        if all([needed_slot_number in slots_numbers for needed_slot_number in needed_slots_numbers]):
-            time_ = _get_iso_time_from_slot_number(slot_number)
-            needed_slots_ids = []
-            for needed_slot_number in needed_slots_numbers:
-                for slot_id_, slot_number_ in slots_ids_numbers:
-                    if slot_number_ == needed_slot_number:
-                        needed_slots_ids.append(slot_id_)
-                        break
-            if needed_slots_ids:
-                possible_times[time_] = needed_slots_ids
+) -> list[str]:
+    possible_times = []
+    for slot_datetime in slots_datetimes:
+        needed_datetimes = get_datetimes_needed_for_appointment(slot_datetime, service_duration)
+        if all([needed_datetime in slots_datetimes for needed_datetime in needed_datetimes]):
+            possible_times.append(slot_datetime.time().isoformat(timespec="minutes"))
     return possible_times
-
-
-def get_slots_ids_to_reserve(
-    times_dict: dict[int, dict[int, dict[int, dict[str, list[int]]]]],
-    starts_at: datetime,
-) -> list[int]:
-    year = starts_at.year
-    month = starts_at.month
-    day = starts_at.day
-    iso_time = starts_at.time().isoformat(timespec="minutes")
-    slots_ids = times_dict[year][month][day][iso_time]
-    return slots_ids
