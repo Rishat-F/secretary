@@ -5,10 +5,8 @@ from calendar import Calendar
 from datetime import datetime, timedelta
 from typing import NamedTuple
 
+from src import messages
 from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
-from src.messages import DAY_BECOME_NOT_AVAILABLE, MONTH_BECOME_NOT_AVAILABLE, NO_SERVICES, NO_APPOINTMENTS_FOR_ADMIN, NO_APPOINTMENTS_FOR_CLIENT, TIME_BECOME_NOT_AVAILABLE, YEAR_BECOME_NOT_AVAILABLE
-from src.models import Service, Appointment
-
 from src.exceptions import (
     DayBecomeNotAvailable,
     MonthBecomeNotAvailable,
@@ -16,6 +14,7 @@ from src.exceptions import (
     TimeBecomeNotAvailable,
     YearBecomeNotAvailable,
 )
+from src.models import Service, Appointment
 
 
 ValidationErrorMessage = str
@@ -33,7 +32,7 @@ def form_services_list_text(services: list[Service], show_duration: bool) -> str
     for pos, service in enumerate(services, start=1):
         text += f"<b>{pos}.</b> {form_service_view(service, show_duration)}"
     if not text:
-        text = NO_SERVICES
+        text = messages.NO_SERVICES
     return text.strip()
 
 
@@ -338,9 +337,9 @@ def form_appointments_list_text(appointments: list[Appointment], for_admin: bool
             text += f"{form_appointment_view(appointment, with_date=False, for_admin=for_admin)}"
     if not text:
         if for_admin:
-            text = NO_APPOINTMENTS_FOR_ADMIN
+            text = messages.NO_APPOINTMENTS_FOR_ADMIN
         else:
-            text = NO_APPOINTMENTS_FOR_CLIENT
+            text = messages.NO_APPOINTMENTS_FOR_CLIENT
     return text.strip()
 
 
@@ -371,23 +370,23 @@ def check_chosen_datetime_is_possible(
     """Вызывает исключение если дата и время недоступно для записи, иначе возвращает None."""
     if datetime_.year not in slots:
         raise YearBecomeNotAvailable(
-            YEAR_BECOME_NOT_AVAILABLE.format(lang_year=date_to_lang(datetime_.year)),
+            messages.YEAR_BECOME_NOT_AVAILABLE.format(lang_year=date_to_lang(datetime_.year)),
         )
     elif datetime_.month not in slots[datetime_.year]:
         raise MonthBecomeNotAvailable(
-            MONTH_BECOME_NOT_AVAILABLE.format(
+            messages.MONTH_BECOME_NOT_AVAILABLE.format(
                 lang_month_year=date_to_lang(datetime_.year, datetime_.month),
             ),
         )
     elif datetime_.day not in slots[datetime_.year][datetime_.month]:
         raise DayBecomeNotAvailable(
-            DAY_BECOME_NOT_AVAILABLE.format(
+            messages.DAY_BECOME_NOT_AVAILABLE.format(
                 lang_day_month_year=date_to_lang(datetime_.year, datetime_.month, datetime_.day),
             ),
         )
     elif datetime_.time().isoformat(timespec="minutes") not in slots[datetime_.year][datetime_.month][datetime_.day]:
         raise TimeBecomeNotAvailable(
-            TIME_BECOME_NOT_AVAILABLE.format(time=datetime_.time().isoformat(timespec="minutes")),
+            messages.TIME_BECOME_NOT_AVAILABLE.format(time=datetime_.time().isoformat(timespec="minutes")),
         )
     else:
         return None
