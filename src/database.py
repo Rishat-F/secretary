@@ -74,7 +74,6 @@ async def get_active_appointments(
 
 async def insert_appointment(session: AsyncSession, appointment: Appointment) -> None:
     session.add(appointment)
-    await session.commit()
 
 
 async def get_available_slots(
@@ -103,4 +102,3 @@ async def insert_reservations(
             Reservation(datetime_=datetime_to_reserve, appointment_id=appointment_id)
         )
     session.add_all(reservations)
-    await session.commit()

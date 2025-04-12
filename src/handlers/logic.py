@@ -31,7 +31,9 @@ from src.keyboards import (
     UPDATE,
     UPDATE_ANOTHER_USLUGA,
     ZAPIS_NA_PRIEM,
+    DateTimePicker,
     back_main_keyboard,
+    get_days_keyboard,
     get_days_keyboard,
     get_months_keyboard,
     get_times_keyboard,
@@ -47,15 +49,18 @@ from src.models import Service, Appointment
 from src.secrets import ADMIN_TG_ID
 from src.states import ServicesActions, MakeAppointment
 from src.utils import (
+    date_to_lang,
     form_service_view,
     form_services_list_text,
     form_appointment_view,
     form_appointments_list_text,
     get_datetimes_needed_for_appointment,
-    get_times,
-    get_days,
-    get_months,
-    get_years,
+    date_to_lang,
+    get_times_keyboard_buttons,
+    get_days_keyboard_buttons,
+    get_months_keyboard_buttons,
+    get_years_with_months_days,
+    months,
     months_swapped,
     preprocess_text,
     validate_service_duration,
@@ -67,7 +72,7 @@ from src.utils import (
 @dataclass
 class MessageToAnswer:
     text: str
-    keyboard: types.ReplyKeyboardMarkup
+    keyboard: types.ReplyKeyboardMarkup | types.ReplyKeyboardRemove | types.InlineKeyboardMarkup
 
 
 @dataclass
@@ -654,274 +659,43 @@ async def choose_service_for_appointment_logic(
                 ]
                 return _get_logic_result(messages_to_answer)
             else:
-                years_to_choose = get_years(times_dict)
+                years_with_months_days = get_years_with_months_days(times_dict)
+                chosen_year = min(years_with_months_days.keys())
+                chosen_month = min(years_with_months_days[chosen_year].keys())
+                days_to_choose = get_days_keyboard_buttons(
+                    years_with_months_days,
+                    now_,
+                    chosen_year,
+                    chosen_month,
+                )
                 messages_to_answer = [
                     MessageToAnswer(
-                        messages.CHOOSE_YEAR,
-                        get_years_keyboard(years_to_choose),
+                        f'Запись на услугу <b>"{service_name_for_appointment}"</b>',
+                        types.ReplyKeyboardRemove(),
+                    ),
+                    MessageToAnswer(
+                        "Выберите дату",
+                        get_days_keyboard(chosen_year, chosen_month, days_to_choose),
                     ),
                 ]
-                state_to_set = MakeAppointment.choose_year
+                state_to_set = MakeAppointment.choose_day
                 data_to_set = {
                     "chosen_service_name": service.name,
-                    "years_to_choose": years_to_choose,
                     "times_dict": times_dict,
                 }
                 return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
 
 
-async def choose_year_for_appointment_logic(
-    user_input: str,
-    state_data: dict,
-    session: AsyncSession,
-) -> LogicResult:
-    text = user_input.strip()
-    upper_text = text.upper()
-    if upper_text == BACK.upper():
-        services = await get_services(session)
-        if not services:
-            return _to_main_menu_result(messages.NO_SERVICES)
-        else:
-            services_for_appointment = {str(pos): service.name for pos, service in enumerate(services, start=1)}
-            message_to_send_1 = _show_services(services, back_main_keyboard, show_duration=False)
-            message_to_send_2 = MessageToAnswer( messages.CHOOSE_SERVICE_TO_MAKE_APPOINTMENT, back_main_keyboard)
-            messages_to_answer = [message_to_send_1, message_to_send_2]
-            state_to_set = MakeAppointment.choose_service
-            data_to_set = {"services_for_appointment": services_for_appointment}
-            return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
-    elif upper_text == MAIN_MENU.upper():
-        return _to_main_menu_result()
+def alert_not_available_to_choose_logic(callback_data: DateTimePicker) -> str:
+    alert_text = ""
+    year = callback_data.year
+    month = callback_data.month
+    day = callback_data.day
+    lang_date = date_to_lang(year, month, day)
+    if year and month and callback_data.day:
+        alert_text = messages.DAY_NOT_AVAILABLE.format(lang_day_month_year=lang_date)
+    elif year and month:
+        alert_text = messages.MONTH_NOT_AVAILABLE.format(lang_month_year=lang_date)
     else:
-        years_to_choose = state_data["years_to_choose"]
-        if text not in [str(year) for year in years_to_choose]:
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_GIVEN_YEAR,
-                    get_years_keyboard(years_to_choose),
-                ),
-            ]
-            return _get_logic_result(messages_to_answer)
-        else:
-            times_dict = state_data["times_dict"]
-            chosen_year = int(text)
-            months_to_choose = get_months(times_dict, chosen_year)
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_MONTH,
-                    get_months_keyboard(months_to_choose),
-                ),
-            ]
-            state_to_set = MakeAppointment.choose_month
-            data_to_update = {
-                "chosen_year": chosen_year,
-                "months_to_choose": months_to_choose,
-            }
-            return _get_logic_result(
-                messages_to_answer,
-                state_to_set,
-                data_to_update=data_to_update,
-            )
-
-
-async def choose_month_for_appointment_logic(user_input: str, state_data: dict) -> LogicResult:
-    text = user_input.strip()
-    upper_text = text.upper()
-    if upper_text == BACK.upper():
-        times_dict = state_data["times_dict"]
-        years_to_choose = get_years(times_dict)
-        messages_to_answer = [
-            MessageToAnswer(
-                messages.CHOOSE_YEAR,
-                get_years_keyboard(years_to_choose),
-            ),
-        ]
-        state_to_set = MakeAppointment.choose_year
-        data_to_update = {"years_to_choose": years_to_choose}
-        return _get_logic_result(
-            messages_to_answer,
-            state_to_set,
-            data_to_update=data_to_update,
-        )
-    elif upper_text == MAIN_MENU.upper():
-        return _to_main_menu_result()
-    else:
-        months_to_choose = state_data["months_to_choose"]
-        if text not in months_to_choose:
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_GIVEN_MONTH,
-                    get_months_keyboard(months_to_choose),
-                ),
-            ]
-            return _get_logic_result(messages_to_answer)
-        else:
-            times_dict = state_data["times_dict"]
-            chosen_year = state_data["chosen_year"]
-            chosen_month = text
-            days_to_choose = get_days(times_dict, chosen_year, chosen_month)
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_DAY,
-                    get_days_keyboard(days_to_choose),
-                ),
-            ]
-            state_to_set = MakeAppointment.choose_day
-            data_to_update = {
-                "chosen_month": chosen_month,
-                "days_to_choose": days_to_choose,
-            }
-            return _get_logic_result(
-                messages_to_answer,
-                state_to_set,
-                data_to_update=data_to_update,
-            )
-
-
-async def choose_day_for_appointment_logic(user_input: str, state_data: dict) -> LogicResult:
-    text = user_input.strip()
-    upper_text = text.upper()
-    if upper_text == BACK.upper():
-        times_dict = state_data["times_dict"]
-        chosen_year = state_data["chosen_year"]
-        months_to_choose = get_months(times_dict, chosen_year)
-        messages_to_answer = [
-            MessageToAnswer(
-                messages.CHOOSE_MONTH,
-                get_months_keyboard(months_to_choose),
-            ),
-        ]
-        state_to_set = MakeAppointment.choose_month
-        data_to_update = {"months_to_choose": months_to_choose}
-        return _get_logic_result(
-            messages_to_answer,
-            state_to_set,
-            data_to_update=data_to_update,
-        )
-    elif upper_text == MAIN_MENU.upper():
-        return _to_main_menu_result()
-    else:
-        days_to_choose = state_data["days_to_choose"]
-        if text not in [str(day) for day in days_to_choose]:
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_GIVEN_DAY,
-                    get_days_keyboard(days_to_choose),
-                ),
-            ]
-            return _get_logic_result(messages_to_answer)
-        else:
-            times_dict = state_data["times_dict"]
-            chosen_year = state_data["chosen_year"]
-            chosen_month = state_data["chosen_month"]
-            chosen_day = int(text)
-            times_to_choose = get_times(
-                times_dict,
-                chosen_year,
-                chosen_month,
-                chosen_day,
-            )
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_TIME,
-                    get_times_keyboard(times_to_choose),
-                ),
-            ]
-            state_to_set = MakeAppointment.choose_time
-            data_to_update = {
-                "chosen_day": chosen_day,
-                "times_to_choose": times_to_choose,
-            }
-            return _get_logic_result(
-                messages_to_answer,
-                state_to_set,
-                data_to_update=data_to_update,
-            )
-
-
-async def choose_time_for_appointment_logic(
-    user_input: str,
-    user_id: int,
-    state_data: dict,
-    session: AsyncSession,
-) -> LogicResult:
-    text = user_input.strip()
-    upper_text = text.upper()
-    if upper_text == BACK.upper():
-        times_dict = state_data["times_dict"]
-        chosen_year = state_data["chosen_year"]
-        chosen_month = state_data["chosen_month"]
-        days_to_choose = get_days(times_dict, chosen_year, chosen_month)
-        messages_to_answer = [
-            MessageToAnswer(
-                messages.CHOOSE_DAY,
-                get_days_keyboard(days_to_choose),
-            ),
-        ]
-        state_to_set = MakeAppointment.choose_day
-        data_to_update = {"days_to_choose": days_to_choose}
-        return _get_logic_result(
-            messages_to_answer,
-            state_to_set,
-            data_to_update=data_to_update,
-        )
-    elif upper_text == MAIN_MENU.upper():
-        return _to_main_menu_result()
-    else:
-        times_to_choose = state_data["times_to_choose"]
-        if text not in times_to_choose:
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.CHOOSE_GIVEN_TIME,
-                    get_times_keyboard(times_to_choose),
-                ),
-            ]
-            return _get_logic_result(messages_to_answer)
-        else:
-            times_dict = state_data["times_dict"]
-            chosen_service_name = state_data["chosen_service_name"]
-            [chosen_service] = await get_services(session, filter_by={"name": chosen_service_name})
-            chosen_year = state_data["chosen_year"]
-            chosen_month = months_swapped[state_data["chosen_month"]]
-            chosen_day = state_data["chosen_day"]
-            chosen_time = text
-            start_time = time.fromisoformat(chosen_time)
-            starts_at = datetime(
-                chosen_year,
-                chosen_month,
-                chosen_day,
-                start_time.hour,
-                start_time.minute,
-            )
-            ends_at = starts_at + timedelta(minutes=chosen_service.duration)
-            appointment = Appointment(
-                client_id=user_id,
-                service_id=chosen_service.service_id,
-                starts_at=starts_at,
-                ends_at=ends_at,
-            )
-            datetimes_to_reserve = get_datetimes_needed_for_appointment(starts_at, chosen_service.duration)
-            await insert_appointment(session, appointment)
-            await insert_reservations(session, datetimes_to_reserve, appointment.appointment_id)
-            messages_to_answer = [
-                MessageToAnswer(
-                    messages.APPOINTMENT_SAVED.format(
-                        appointment_view=form_appointment_view(appointment, with_date=True, for_admin=False),
-                    ),
-                    appointments_keyboard,
-                ),
-            ]
-            messages_to_send = [
-                MessageToSend(
-                    user_id=ADMIN_TG_ID,
-                    text=messages.NEW_APPOINTMENT_CREATED.format(
-                        appointment_view=form_appointment_view(appointment, with_date=True, for_admin=True),
-                    ),
-                ),
-            ]
-            state_to_set = MakeAppointment.choose_action
-            return _get_logic_result(
-                messages_to_answer,
-                state_to_set,
-                data_to_set={},
-                messages_to_send=messages_to_send,
-            )
+        alert_text = messages.YEAR_NOT_AVAILABLE.format(lang_year=lang_date)
+    return alert_text
