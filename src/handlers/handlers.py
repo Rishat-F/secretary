@@ -1,22 +1,25 @@
 """Обработчики бота."""
 
+from datetime import datetime, time, timedelta
 from typing import Any
 
 from aiogram import Bot, types
 from aiogram.fsm.context import FSMContext
+from sqlalchemy import inspect
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.exceptions import DateTimeBecomeNotAvailable, DayBecomeNotAvailable, MonthBecomeNotAvailable, TimeBecomeNotAvailable, YearBecomeNotAvailable
+from src.handlers.business_logic import get_times_possible_for_appointment
+from src.models import Appointment
 from src.handlers.logic import (
     LogicResult,
-    choose_day_for_appointment_logic,
-    choose_month_for_appointment_logic,
-    choose_time_for_appointment_logic,
+    alert_not_available_to_choose_logic,
     choose_service_field_to_update_logic,
     choose_service_to_delete_logic,
     choose_service_to_update_logic,
     choose_service_for_appointment_logic,
     choose_services_action_logic,
-    choose_year_for_appointment_logic,
     choose_appointments_action_logic,
     set_service_duration_logic,
     set_service_name_logic,
@@ -28,7 +31,11 @@ from src.handlers.logic import (
     appointments_logic,
 )
 from src import messages
-from src.keyboards import main_keyboard
+from src.database import get_available_slots, get_services, insert_appointment, insert_reservations
+from src.keyboards import appointments_keyboard, get_confirm_appointment_keyboard, get_days_keyboard, get_months_keyboard, get_times_keyboard, get_years_keyboard, main_keyboard, DateTimePicker
+from src.secrets import ADMIN_TG_ID
+from src.states import MakeAppointment
+from src.utils import check_chosen_datetime_is_possible, date_to_lang, form_appointment_view, get_datetimes_needed_for_appointment, get_days_keyboard_buttons, get_months_keyboard_buttons, get_years_keyboard_buttons, get_times_keyboard_buttons, get_years_with_months, get_years_with_months_days
 
 
 async def _process_logic_return(
@@ -235,49 +242,270 @@ async def choose_service_for_appointment(
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
-async def choose_year_for_appointment(
-    message: types.Message,
-    async_session: async_sessionmaker[AsyncSession],
+async def go_to_choose_year_for_appointment(
+    callback: types.CallbackQuery,
     state: FSMContext,
 ) -> None:
-    if not message.text:
+    if not callback.message:
         return None
     data = await state.get_data()
-    async with async_session() as session:
-        result = await choose_year_for_appointment_logic(message.text, data, session)
-    await _process_logic_return(result, fsm_context=state, message=message)
+    times_dict = data["times_dict"]
+    years = list(times_dict.keys())
+    now_ = datetime.today()
+    years_keyboard_buttons = get_years_keyboard_buttons(years, now_)
+    await state.set_state(MakeAppointment.choose_year)
+    await callback.message.edit_text(
+        text=messages.CHOOSE_YEAR,
+        reply_markup=get_years_keyboard(years_keyboard_buttons),
+    )
+    await callback.answer()
 
 
-async def choose_month_for_appointment(message: types.Message, state: FSMContext) -> None:
-    if not message.text:
-        return None
-    data = await state.get_data()
-    result = await choose_month_for_appointment_logic(message.text, data)
-    await _process_logic_return(result, fsm_context=state, message=message)
-
-
-async def choose_day_for_appointment(message: types.Message, state: FSMContext) -> None:
-    if not message.text:
-        return None
-    data = await state.get_data()
-    result = await choose_day_for_appointment_logic(message.text, data)
-    await _process_logic_return(result, fsm_context=state, message=message)
-
-
-async def choose_time_for_appointment(
-    message: types.Message,
-    bot: Bot,
-    async_session: async_sessionmaker[AsyncSession],
+async def go_to_choose_month_for_appointment(
+    callback: types.CallbackQuery,
+    callback_data: DateTimePicker,
     state: FSMContext,
 ) -> None:
-    if not message.text or not message.from_user:
+    if not callback.message:
         return None
     data = await state.get_data()
+    times_dict = data["times_dict"]
+    now_ = datetime.today()
+    chosen_year = callback_data.year
+    years_with_months = get_years_with_months(times_dict)
+    months_keyboard_buttons = get_months_keyboard_buttons(years_with_months, now_, chosen_year)
+    await state.set_state(MakeAppointment.choose_month)
+    await callback.message.edit_text(
+        text=messages.CHOOSE_MONTH,
+        reply_markup=get_months_keyboard(chosen_year, months_keyboard_buttons),
+    )
+    await callback.answer()
+
+
+async def go_to_choose_day_for_appointment(
+    callback: types.CallbackQuery,
+    callback_data: DateTimePicker,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    times_dict = data["times_dict"]
+    now_ = datetime.today()
+    chosen_year = callback_data.year
+    chosen_month = callback_data.month
+    years_with_months_days = get_years_with_months_days(times_dict)
+    days_keyboard_buttons = get_days_keyboard_buttons(years_with_months_days, now_, chosen_year, chosen_month)
+    await state.set_state(MakeAppointment.choose_day)
+    await callback.message.edit_text(
+        text=messages.CHOOSE_DAY,
+        reply_markup=get_days_keyboard(chosen_year, chosen_month, days_keyboard_buttons),
+    )
+    await callback.answer()
+
+
+async def go_to_choose_time_for_appointment(
+    callback: types.CallbackQuery,
+    callback_data: DateTimePicker,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    times_dict = data["times_dict"]
+    now_ = datetime.today()
+    chosen_year = callback_data.year
+    chosen_month = callback_data.month
+    chosen_day = callback_data.day
+    times_keyboard_buttons = get_times_keyboard_buttons(
+        times_dict,
+        now_,
+        chosen_year,
+        chosen_month,
+        chosen_day,
+    )
+    await state.set_state(MakeAppointment.choose_time)
+    await callback.message.edit_text(
+        text=messages.CHOOSE_TIME,
+        reply_markup=get_times_keyboard(
+            chosen_year,
+            chosen_month,
+            chosen_day,
+            times_keyboard_buttons,
+        ),
+    )
+    await callback.answer()
+
+
+async def go_to_confirm_appointment(
+    callback: types.CallbackQuery,
+    callback_data: DateTimePicker,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    chosen_service_name = data["chosen_service_name"]
+    chosen_year = callback_data.year
+    chosen_month = callback_data.month
+    chosen_day = callback_data.day
+    chosen_time = time.fromisoformat(callback_data.time)
+    chosen_datetime = datetime(
+        chosen_year,
+        chosen_month,
+        chosen_day,
+        chosen_time.hour,
+        chosen_time.minute,
+    )
+    await state.set_state(MakeAppointment.confirm)
+    await callback.message.edit_text(
+        text=messages.CONFIRM_APPOINTMENT.format(
+            lang_day_month_year=date_to_lang(chosen_year, chosen_month, chosen_day),
+            time=chosen_time.isoformat(timespec="minutes"),
+            service_name=chosen_service_name,
+        ),
+        reply_markup=get_confirm_appointment_keyboard(chosen_datetime),
+    )
+    await callback.answer()
+
+
+async def appointment_confirmed(
+    callback: types.CallbackQuery,
+    callback_data: DateTimePicker,
+    state: FSMContext,
+    async_session: async_sessionmaker[AsyncSession],
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    chosen_service_name = data["chosen_service_name"]
     async with async_session() as session:
-        result = await choose_time_for_appointment_logic(
-            message.text,
-            message.from_user.id,
-            data,
-            session,
-        )
-    await _process_logic_return(result, fsm_context=state, message=message, bot=bot)
+        [chosen_service] = await get_services(session, filter_by={"name": chosen_service_name})
+    chosen_year = callback_data.year
+    chosen_month = callback_data.month
+    chosen_day = callback_data.day
+    chosen_time = time.fromisoformat(callback_data.time)
+    starts_at = datetime(
+        chosen_year,
+        chosen_month,
+        chosen_day,
+        chosen_time.hour,
+        chosen_time.minute,
+    )
+    ends_at = starts_at + timedelta(minutes=chosen_service.duration)
+    appointment = Appointment(
+        client_id=callback.from_user.id,
+        service_id=chosen_service.service_id,
+        starts_at=starts_at,
+        ends_at=ends_at,
+    )
+    datetimes_to_reserve = get_datetimes_needed_for_appointment(starts_at, chosen_service.duration)
+    now_ = datetime.today()
+    async with async_session() as session:
+        try:
+            await insert_appointment(session, appointment)
+            await session.flush()
+            await insert_reservations(session, datetimes_to_reserve, appointment.appointment_id)
+            await session.flush()
+        except IntegrityError:
+            await session.rollback()
+            slots = await get_available_slots(session, datetime.now())
+            times_dict = await get_times_possible_for_appointment(chosen_service, slots)
+            if not times_dict:
+                await state.set_data({})
+                await state.set_state(MakeAppointment.choose_action)
+                await callback.message.delete()
+                await callback.message.answer(
+                    text=messages.NO_POSSIBLE_TIMES_FOR_SERVICE,
+                    reply_markup=appointments_keyboard,
+                )
+                return None
+            await state.update_data({"times_dict": times_dict})
+            try:
+                check_chosen_datetime_is_possible(starts_at, times_dict)
+            except DateTimeBecomeNotAvailable as err:
+                if isinstance(err, YearBecomeNotAvailable):
+                    state_to_set = MakeAppointment.choose_year
+                    message_to_edit_to = messages.CHOOSE_YEAR
+                    years = list(times_dict.keys())
+                    years_keyboard_buttons = get_years_keyboard_buttons(years, now_)
+                    keyboard_to_show = get_years_keyboard(years_keyboard_buttons)
+                elif isinstance(err, MonthBecomeNotAvailable):
+                    state_to_set = MakeAppointment.choose_month
+                    message_to_edit_to = messages.CHOOSE_MONTH
+                    years_with_months = get_years_with_months(times_dict)
+                    months_keyboard_buttons = get_months_keyboard_buttons(years_with_months, now_, chosen_year)
+                    keyboard_to_show = get_months_keyboard(chosen_year, months_keyboard_buttons)
+                elif isinstance(err, DayBecomeNotAvailable):
+                    state_to_set = MakeAppointment.choose_day
+                    message_to_edit_to = messages.CHOOSE_DAY
+                    years_with_months_days = get_years_with_months_days(times_dict)
+                    days_keyboard_buttons = get_days_keyboard_buttons(years_with_months_days, now_, chosen_year, chosen_month)
+                    keyboard_to_show = get_days_keyboard(chosen_year, chosen_month, days_keyboard_buttons)
+                else:
+                    state_to_set = MakeAppointment.choose_time
+                    message_to_edit_to = messages.CHOOSE_TIME
+                    times_keyboard_buttons = get_times_keyboard_buttons(
+                        times_dict,
+                        now_,
+                        chosen_year,
+                        chosen_month,
+                        chosen_day,
+                    )
+                    keyboard_to_show = get_times_keyboard(
+                        chosen_year,
+                        chosen_month,
+                        chosen_day,
+                        times_keyboard_buttons,
+                    )
+                await state.set_state(state_to_set)
+                await callback.message.edit_text(text=message_to_edit_to, reply_markup=keyboard_to_show)
+                await callback.answer(str(err), show_alert=True)
+        else:
+            await callback.message.delete()
+            await session.refresh(appointment)
+            await callback.message.answer(
+                text=(
+                    f"{messages.APPOINTMENT_SAVED}\n"
+                    f"{messages.COME.format(appointment_view=form_appointment_view(appointment, with_date=True, for_admin=False))}"
+                ),
+                reply_markup=appointments_keyboard,
+            )
+            await session.commit()
+            await callback.bot.send_message(
+                ADMIN_TG_ID,
+                messages.NEW_APPOINTMENT_CREATED.format(
+                    appointment_view=form_appointment_view(appointment, with_date=True, for_admin=True),
+                ),
+            )
+            await state.set_data({})
+            await state.set_state(MakeAppointment.choose_action)
+            await callback.answer(messages.APPOINTMENT_SAVED, show_alert=True)
+
+
+async def alert_not_available_to_choose(
+    callback: types.CallbackQuery,
+    callback_data: DateTimePicker,
+) -> None:
+    alert_text = alert_not_available_to_choose_logic(callback_data)
+    await callback.answer(alert_text, show_alert=True)
+
+
+async def ignore_inline_button(callback: types.CallbackQuery) -> None:
+    await callback.answer()
+
+
+async def cancel_choose_date_for_appointment(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    await callback.message.delete()
+    await callback.message.answer(
+        text=messages.CANCELED,
+        reply_markup=appointments_keyboard,
+    )
+    await state.set_data({})
+    await state.set_state(MakeAppointment.choose_action)
+    await callback.answer()

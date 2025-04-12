@@ -27,3 +27,4 @@ class MakeAppointment(StatesGroup):
     choose_month = State()
     choose_day = State()
     choose_time = State()
+    confirm = State()

@@ -1,17 +1,23 @@
 from aiogram import Dispatcher, F
 from aiogram.enums import ChatType
+from aiogram.filters import or_f
 
 from src.handlers.handlers import (
-    choose_day_for_appointment,
-    choose_month_for_appointment,
-    choose_time_for_appointment,
+    alert_not_available_to_choose,
+    appointment_confirmed,
+    cancel_choose_date_for_appointment,
     choose_service_field_to_update,
     choose_service_to_delete,
     choose_service_to_update,
     choose_service_for_appointment,
     choose_services_action,
-    choose_year_for_appointment,
     choose_appointments_action,
+    go_to_choose_day_for_appointment,
+    go_to_choose_month_for_appointment,
+    go_to_choose_time_for_appointment,
+    go_to_choose_year_for_appointment,
+    go_to_confirm_appointment,
+    ignore_inline_button,
     set_service_duration,
     set_service_name,
     set_service_new_duration,
@@ -22,7 +28,7 @@ from src.handlers.handlers import (
     services,
     appointments,
 )
-from src.keyboards import USLUGI, ZAPISI
+from src.keyboards import USLUGI, ZAPISI, DateTimePicker
 from src.secrets import ADMIN_TG_ID
 from src.states import ServicesActions, MakeAppointment
 
@@ -41,29 +47,73 @@ def register_handlers(dp: Dispatcher) -> None:
         MakeAppointment.choose_service,
         F.chat.type == ChatType.PRIVATE.value,
     )
-    dp.message.register(
-        choose_year_for_appointment,
-        F.chat.id != ADMIN_TG_ID,
-        MakeAppointment.choose_year,
-        F.chat.type == ChatType.PRIVATE.value,
+    dp.callback_query.register(
+        cancel_choose_date_for_appointment,
+        or_f(
+            MakeAppointment.choose_year,
+            MakeAppointment.choose_month,
+            MakeAppointment.choose_day,
+            MakeAppointment.choose_time,
+            MakeAppointment.confirm,
+        ),
+        DateTimePicker.filter(F.action == "cancel"),
     )
-    dp.message.register(
-        choose_month_for_appointment,
-        F.chat.id != ADMIN_TG_ID,
-        MakeAppointment.choose_month,
-        F.chat.type == ChatType.PRIVATE.value,
+    dp.callback_query.register(
+        ignore_inline_button,
+        DateTimePicker.filter(F.action == "ignore"),
     )
-    dp.message.register(
-        choose_day_for_appointment,
-        F.chat.id != ADMIN_TG_ID,
-        MakeAppointment.choose_day,
-        F.chat.type == ChatType.PRIVATE.value,
+    dp.callback_query.register(
+        go_to_choose_year_for_appointment,
+        or_f(
+            MakeAppointment.choose_month,
+            MakeAppointment.choose_day,
+            MakeAppointment.choose_time,
+        ),
+        DateTimePicker.filter(F.action == "choose_year"),
     )
-    dp.message.register(
-        choose_time_for_appointment,
-        F.chat.id != ADMIN_TG_ID,
+    dp.callback_query.register(
+        go_to_choose_month_for_appointment,
+        or_f(
+            MakeAppointment.choose_year,
+            MakeAppointment.choose_day,
+            MakeAppointment.choose_time,
+        ),
+        DateTimePicker.filter(F.action == "choose_month"),
+    )
+    dp.callback_query.register(
+        go_to_choose_day_for_appointment,
+        or_f(
+            MakeAppointment.choose_month,
+            MakeAppointment.choose_time,
+        ),
+        DateTimePicker.filter(F.action == "choose_day"),
+    )
+    dp.callback_query.register(
+        go_to_choose_time_for_appointment,
+        or_f(
+            MakeAppointment.choose_day,
+            MakeAppointment.confirm,
+        ),
+        DateTimePicker.filter(F.action == "choose_time"),
+    )
+    dp.callback_query.register(
+        go_to_confirm_appointment,
         MakeAppointment.choose_time,
-        F.chat.type == ChatType.PRIVATE.value,
+        DateTimePicker.filter(F.action == "confirm"),
+    )
+    dp.callback_query.register(
+        appointment_confirmed,
+        MakeAppointment.confirm,
+        DateTimePicker.filter(F.action == "confirmed"),
+    )
+    dp.callback_query.register(
+        alert_not_available_to_choose,
+        or_f(
+            MakeAppointment.choose_year,
+            MakeAppointment.choose_month,
+            MakeAppointment.choose_day,
+        ),
+        DateTimePicker.filter(F.action == "not_available"),
     )
     dp.message.register(
         choose_services_action,
