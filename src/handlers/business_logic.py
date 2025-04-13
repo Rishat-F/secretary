@@ -1,5 +1,6 @@
+from src.config import TIMEZONE
 from src.models import Service, Slot
-from src.utils import get_times_for_appointment
+from src.utils import from_utc, get_times_for_appointment
 
 
 async def get_times_possible_for_appointment(
@@ -32,13 +33,14 @@ async def get_times_possible_for_appointment(
     """
     slots_dict = {}
     for slot in slots:
-        if slot.datetime_.year not in slots_dict:
-            slots_dict[slot.datetime_.year] = {}
-        if slot.datetime_.month not in slots_dict[slot.datetime_.year]:
-            slots_dict[slot.datetime_.year][slot.datetime_.month] = {}
-        if slot.datetime_.day not in slots_dict[slot.datetime_.year][slot.datetime_.month]:
-            slots_dict[slot.datetime_.year][slot.datetime_.month][slot.datetime_.day] = []
-        slots_dict[slot.datetime_.year][slot.datetime_.month][slot.datetime_.day].append(slot.datetime_)
+        slot_tz_datetime = from_utc(slot.datetime_, TIMEZONE)
+        if slot_tz_datetime.year not in slots_dict:
+            slots_dict[slot_tz_datetime.year] = {}
+        if slot_tz_datetime.month not in slots_dict[slot_tz_datetime.year]:
+            slots_dict[slot_tz_datetime.year][slot_tz_datetime.month] = {}
+        if slot_tz_datetime.day not in slots_dict[slot_tz_datetime.year][slot_tz_datetime.month]:
+            slots_dict[slot_tz_datetime.year][slot_tz_datetime.month][slot_tz_datetime.day] = []
+        slots_dict[slot_tz_datetime.year][slot_tz_datetime.month][slot_tz_datetime.day].append(slot_tz_datetime)
     times_dict = {}
     for year_ in slots_dict:
         for month_ in slots_dict[year_]:

@@ -1,19 +1,17 @@
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
 
 from aiogram import types
 from aiogram.fsm.state import State
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src import messages
+from src.config import TIMEZONE
 from src.database import (
     delete_service,
     get_available_slots,
     get_services,
     get_active_appointments,
-    insert_reservations,
     insert_service,
-    insert_appointment,
     update_service,
 )
 from src.exceptions import ServiceNameTooLongError
@@ -34,34 +32,26 @@ from src.keyboards import (
     DateTimePicker,
     back_main_keyboard,
     get_days_keyboard,
-    get_days_keyboard,
-    get_months_keyboard,
-    get_times_keyboard,
     get_services_to_update_keyboard,
-    get_years_keyboard,
     main_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,
     services_keyboard,
     appointments_keyboard,
 )
-from src.models import Service, Appointment
+from src.models import Service
 from src.secrets import ADMIN_TG_ID
 from src.states import ServicesActions, MakeAppointment
 from src.utils import (
     date_to_lang,
     form_service_view,
     form_services_list_text,
-    form_appointment_view,
     form_appointments_list_text,
-    get_datetimes_needed_for_appointment,
+    from_utc,
     date_to_lang,
-    get_times_keyboard_buttons,
     get_days_keyboard_buttons,
-    get_months_keyboard_buttons,
+    get_utc_now,
     get_years_with_months_days,
-    months,
-    months_swapped,
     preprocess_text,
     validate_service_duration,
     validate_service_name,
@@ -647,8 +637,9 @@ async def choose_service_for_appointment_logic(
                 ]
                 return _get_logic_result(messages_to_answer)
             [service] = services
-            now_ = datetime.now()
-            slots = await get_available_slots(session, now_)
+            utc_now = get_utc_now()
+            tz_now = from_utc(utc_now, TIMEZONE)
+            slots = await get_available_slots(session, utc_now)
             times_dict = await get_times_possible_for_appointment(service, slots)
             if not times_dict:
                 messages_to_answer = [
@@ -664,7 +655,7 @@ async def choose_service_for_appointment_logic(
                 chosen_month = min(years_with_months_days[chosen_year].keys())
                 days_to_choose = get_days_keyboard_buttons(
                     years_with_months_days,
-                    now_,
+                    tz_now,
                     chosen_year,
                     chosen_month,
                 )

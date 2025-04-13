@@ -93,12 +93,12 @@ class Appointment(Base):
     starts_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        comment="Дата и время начала приема (должно быть кратно 30 минутам)",
+        comment="Дата и время начала приема (UTC, должно быть кратно 30 минутам)",
     )
     ends_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        comment="Дата и время окончания приема (должно быть кратно 30 минутам)",
+        comment="Дата и время окончания приема (UTC, должно быть кратно 30 минутам)",
     )
 
     service: Mapped["Service"] = relationship(back_populates="appointments", lazy="joined")
@@ -112,7 +112,7 @@ class Slot(Base):
         DateTime,
         primary_key=True,
         nullable=False,
-        comment="Дата и время слота",
+        comment="Дата и время слота (UTC)",
     )
 
 
@@ -124,7 +124,7 @@ class Reservation(Base):
         ForeignKey("slot.datetime_", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        comment="Дата и время слота",
+        comment="Дата и время слота (UTC)",
     )
     appointment_id: Mapped[int] = mapped_column(
         ForeignKey("appointment.appointment_id", ondelete="CASCADE"),

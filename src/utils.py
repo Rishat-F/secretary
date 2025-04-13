@@ -2,10 +2,13 @@
 
 import re
 from calendar import Calendar
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 from typing import NamedTuple
 
+import pytz
+
 from src import messages
+from src.config import TIMEZONE
 from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
 from src.exceptions import (
     DayBecomeNotAvailable,
@@ -310,12 +313,14 @@ def get_times_keyboard_buttons(
 
 def form_appointment_view(appointment: Appointment, with_date: bool, for_admin: bool) -> str:
     view = ""
+    tz_starts_at = from_utc(appointment.starts_at, TIMEZONE)
     if with_date:
-        date_ = appointment.starts_at.strftime("%d.%m.%Y")
+        date_ = tz_starts_at.strftime("%d.%m.%Y")
         view += f"<b>{date_}</b>\n"
-    start_time = appointment.starts_at.strftime("%H:%M")
+    start_time = tz_starts_at.strftime("%H:%M")
     if for_admin:
-        end_time = appointment.ends_at.strftime("%H:%M")
+        tz_ends_at = from_utc(appointment.ends_at, TIMEZONE)
+        end_time = tz_ends_at.strftime("%H:%M")
         view += f"    <i>{start_time} - {end_time}</i>  {appointment.service.name}\n"
     else:
         view += f"    <i>{start_time}</i>  {appointment.service.name}\n"
@@ -390,3 +395,21 @@ def check_chosen_datetime_is_possible(
         )
     else:
         return None
+
+
+def from_utc(utc_dt: datetime, dest_tz: tzinfo) -> datetime:
+    if not utc_dt.tzinfo:
+        utc_dt = pytz.timezone("UTC").localize(utc_dt)
+    tz_datetime = utc_dt.astimezone(dest_tz)
+    return tz_datetime
+
+
+def to_utc(tz_dt: datetime) -> datetime:
+    utc_tz = pytz.timezone("UTC")
+    utc_datetime = tz_dt.astimezone(utc_tz)
+    return utc_datetime
+
+
+def get_utc_now() -> datetime:
+    utc_now = datetime.now(UTC)
+    return utc_now

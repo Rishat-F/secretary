@@ -14,6 +14,7 @@
 
 - BOT_TOKEN
 - ADMIN_TG_ID
+- TIMEZONE (например, "Europe/Moscow")
 
 ### 3. Запустить бота
 

@@ -5,11 +5,16 @@ from typing import Any
 
 from aiogram import Bot, types
 from aiogram.fsm.context import FSMContext
-from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.exceptions import DateTimeBecomeNotAvailable, DayBecomeNotAvailable, MonthBecomeNotAvailable, TimeBecomeNotAvailable, YearBecomeNotAvailable
+from src import messages
+from src.exceptions import (
+    DateTimeBecomeNotAvailable,
+    DayBecomeNotAvailable,
+    MonthBecomeNotAvailable,
+    YearBecomeNotAvailable,
+)
 from src.handlers.business_logic import get_times_possible_for_appointment
 from src.models import Appointment
 from src.handlers.logic import (
@@ -30,12 +35,39 @@ from src.handlers.logic import (
     services_logic,
     appointments_logic,
 )
-from src import messages
-from src.database import get_available_slots, get_services, insert_appointment, insert_reservations
-from src.keyboards import appointments_keyboard, get_confirm_appointment_keyboard, get_days_keyboard, get_months_keyboard, get_times_keyboard, get_years_keyboard, main_keyboard, DateTimePicker
+from src.config import TIMEZONE
+from src.database import (
+    get_available_slots,
+    get_services,
+    insert_appointment,
+    insert_reservations,
+)
+from src.keyboards import (
+    appointments_keyboard,
+    get_confirm_appointment_keyboard,
+    get_days_keyboard,
+    get_months_keyboard,
+    get_times_keyboard,
+    get_years_keyboard,
+    main_keyboard,
+    DateTimePicker,
+)
 from src.secrets import ADMIN_TG_ID
 from src.states import MakeAppointment
-from src.utils import check_chosen_datetime_is_possible, date_to_lang, form_appointment_view, get_datetimes_needed_for_appointment, get_days_keyboard_buttons, get_months_keyboard_buttons, get_years_keyboard_buttons, get_times_keyboard_buttons, get_years_with_months, get_years_with_months_days
+from src.utils import (
+    check_chosen_datetime_is_possible,
+    date_to_lang,
+    form_appointment_view,
+    from_utc,
+    get_datetimes_needed_for_appointment,
+    get_days_keyboard_buttons,
+    get_months_keyboard_buttons,
+    get_utc_now,
+    get_years_keyboard_buttons,
+    get_times_keyboard_buttons,
+    get_years_with_months,
+    get_years_with_months_days, to_utc,
+)
 
 
 async def _process_logic_return(
@@ -251,8 +283,9 @@ async def go_to_choose_year_for_appointment(
     data = await state.get_data()
     times_dict = data["times_dict"]
     years = list(times_dict.keys())
-    now_ = datetime.today()
-    years_keyboard_buttons = get_years_keyboard_buttons(years, now_)
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    years_keyboard_buttons = get_years_keyboard_buttons(years, tz_now)
     await state.set_state(MakeAppointment.choose_year)
     await callback.message.edit_text(
         text=messages.CHOOSE_YEAR,
@@ -270,10 +303,11 @@ async def go_to_choose_month_for_appointment(
         return None
     data = await state.get_data()
     times_dict = data["times_dict"]
-    now_ = datetime.today()
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
     chosen_year = callback_data.year
     years_with_months = get_years_with_months(times_dict)
-    months_keyboard_buttons = get_months_keyboard_buttons(years_with_months, now_, chosen_year)
+    months_keyboard_buttons = get_months_keyboard_buttons(years_with_months, tz_now, chosen_year)
     await state.set_state(MakeAppointment.choose_month)
     await callback.message.edit_text(
         text=messages.CHOOSE_MONTH,
@@ -291,11 +325,12 @@ async def go_to_choose_day_for_appointment(
         return None
     data = await state.get_data()
     times_dict = data["times_dict"]
-    now_ = datetime.today()
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
     chosen_year = callback_data.year
     chosen_month = callback_data.month
     years_with_months_days = get_years_with_months_days(times_dict)
-    days_keyboard_buttons = get_days_keyboard_buttons(years_with_months_days, now_, chosen_year, chosen_month)
+    days_keyboard_buttons = get_days_keyboard_buttons(years_with_months_days, tz_now, chosen_year, chosen_month)
     await state.set_state(MakeAppointment.choose_day)
     await callback.message.edit_text(
         text=messages.CHOOSE_DAY,
@@ -313,13 +348,14 @@ async def go_to_choose_time_for_appointment(
         return None
     data = await state.get_data()
     times_dict = data["times_dict"]
-    now_ = datetime.today()
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
     chosen_year = callback_data.year
     chosen_month = callback_data.month
     chosen_day = callback_data.day
     times_keyboard_buttons = get_times_keyboard_buttons(
         times_dict,
-        now_,
+        tz_now,
         chosen_year,
         chosen_month,
         chosen_day,
@@ -385,13 +421,16 @@ async def appointment_confirmed(
     chosen_month = callback_data.month
     chosen_day = callback_data.day
     chosen_time = time.fromisoformat(callback_data.time)
-    starts_at = datetime(
-        chosen_year,
-        chosen_month,
-        chosen_day,
-        chosen_time.hour,
-        chosen_time.minute,
+    tz_starts_at = TIMEZONE.localize(
+        datetime(
+            chosen_year,
+            chosen_month,
+            chosen_day,
+            chosen_time.hour,
+            chosen_time.minute,
+        )
     )
+    starts_at = to_utc(tz_starts_at)
     ends_at = starts_at + timedelta(minutes=chosen_service.duration)
     appointment = Appointment(
         client_id=callback.from_user.id,
@@ -400,7 +439,8 @@ async def appointment_confirmed(
         ends_at=ends_at,
     )
     datetimes_to_reserve = get_datetimes_needed_for_appointment(starts_at, chosen_service.duration)
-    now_ = datetime.today()
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
     async with async_session() as session:
         try:
             await insert_appointment(session, appointment)
@@ -409,7 +449,7 @@ async def appointment_confirmed(
             await session.flush()
         except IntegrityError:
             await session.rollback()
-            slots = await get_available_slots(session, datetime.now())
+            slots = await get_available_slots(session, utc_now)
             times_dict = await get_times_possible_for_appointment(chosen_service, slots)
             if not times_dict:
                 await state.set_data({})
@@ -422,32 +462,32 @@ async def appointment_confirmed(
                 return None
             await state.update_data({"times_dict": times_dict})
             try:
-                check_chosen_datetime_is_possible(starts_at, times_dict)
+                check_chosen_datetime_is_possible(tz_starts_at, times_dict)
             except DateTimeBecomeNotAvailable as err:
                 if isinstance(err, YearBecomeNotAvailable):
                     state_to_set = MakeAppointment.choose_year
                     message_to_edit_to = messages.CHOOSE_YEAR
                     years = list(times_dict.keys())
-                    years_keyboard_buttons = get_years_keyboard_buttons(years, now_)
+                    years_keyboard_buttons = get_years_keyboard_buttons(years, tz_now)
                     keyboard_to_show = get_years_keyboard(years_keyboard_buttons)
                 elif isinstance(err, MonthBecomeNotAvailable):
                     state_to_set = MakeAppointment.choose_month
                     message_to_edit_to = messages.CHOOSE_MONTH
                     years_with_months = get_years_with_months(times_dict)
-                    months_keyboard_buttons = get_months_keyboard_buttons(years_with_months, now_, chosen_year)
+                    months_keyboard_buttons = get_months_keyboard_buttons(years_with_months, tz_now, chosen_year)
                     keyboard_to_show = get_months_keyboard(chosen_year, months_keyboard_buttons)
                 elif isinstance(err, DayBecomeNotAvailable):
                     state_to_set = MakeAppointment.choose_day
                     message_to_edit_to = messages.CHOOSE_DAY
                     years_with_months_days = get_years_with_months_days(times_dict)
-                    days_keyboard_buttons = get_days_keyboard_buttons(years_with_months_days, now_, chosen_year, chosen_month)
+                    days_keyboard_buttons = get_days_keyboard_buttons(years_with_months_days, tz_now, chosen_year, chosen_month)
                     keyboard_to_show = get_days_keyboard(chosen_year, chosen_month, days_keyboard_buttons)
                 else:
                     state_to_set = MakeAppointment.choose_time
                     message_to_edit_to = messages.CHOOSE_TIME
                     times_keyboard_buttons = get_times_keyboard_buttons(
                         times_dict,
-                        now_,
+                        tz_now,
                         chosen_year,
                         chosen_month,
                         chosen_day,
