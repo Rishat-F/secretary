@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
+import pytz
 
 from src.exceptions import (
     DayBecomeNotAvailable,
@@ -12,12 +13,14 @@ from src.utils import (
     InlineButton,
     check_chosen_datetime_is_possible,
     date_to_lang,
+    from_utc,
     get_datetimes_needed_for_appointment,
     get_months_keyboard_buttons,
     get_times_for_appointment,
     get_years_keyboard_buttons,
     get_years_with_months,
     get_years_with_months_days,
+    to_utc,
 )
 
 
@@ -513,3 +516,61 @@ def test_get_years_with_months(slots, expected_result):
 )
 def test_get_years_with_months_days(slots, expected_result):
     assert get_years_with_months_days(slots) == expected_result
+
+
+@pytest.mark.parametrize(
+    "datetime_,dest_tz,expected_result",
+    [
+        (
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+            pytz.timezone("Europe/Moscow"),
+            datetime(2025, 4, 12, 18, 0, tzinfo=timezone(timedelta(hours=3))),
+        ),
+        (
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+            pytz.timezone("Europe/London"),
+            datetime(2025, 4, 12, 16, 0, tzinfo=timezone(timedelta(hours=1))),
+        ),
+        (
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+            pytz.timezone("America/New_York"),
+            datetime(2025, 4, 12, 8, 0, tzinfo=timezone(timedelta(hours=-7))),
+        ),
+        (
+            datetime(2025, 4, 12, 15, 0),
+            pytz.timezone("Europe/Moscow"),
+            datetime(2025, 4, 12, 18, 0, tzinfo=timezone(timedelta(hours=3))),
+        ),
+    ],
+)
+def test_from_utc(datetime_, dest_tz, expected_result):
+    assert from_utc(datetime_, dest_tz) == expected_result
+
+
+@pytest.mark.parametrize(
+    "datetime_,expected_result",
+    [
+        (
+            datetime(2025, 4, 12, 18, 0, tzinfo=timezone(timedelta(hours=3))),
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+        ),
+        (
+            pytz.timezone("Europe/Moscow").localize(datetime(2025, 4, 12, 18, 0)),
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+        ),
+        (
+            datetime(2025, 4, 12, 16, 0, tzinfo=timezone(timedelta(hours=1))),
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+        ),
+        (
+            datetime(2025, 4, 12, 8, 0, tzinfo=timezone(timedelta(hours=-7))),
+            datetime(2025, 4, 12, 15, 0, tzinfo=UTC),
+        ),
+        (
+            datetime(2026, 9, 11, 0, 0, tzinfo=timezone(timedelta(hours=3))),
+            datetime(2026, 9, 10, 21, 0, tzinfo=UTC),
+        ),
+    ],
+)
+def test_to_utc(datetime_, expected_result):
+    assert to_utc(datetime_) == expected_result
