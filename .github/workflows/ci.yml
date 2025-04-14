@@ -69,11 +69,12 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_TG_ID: ${{ secrets.ADMIN_TG_ID }}
+          TIMEZONE: ${{ vars.TIMEZONE }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
-          envs: BOT_TOKEN, ADMIN_TG_ID
+          envs: BOT_TOKEN, ADMIN_TG_ID, TIMEZONE
           script: cd ~/secretary && make secretary_up && docker system prune -f
 
   qa_approve:

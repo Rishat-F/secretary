@@ -15,4 +15,5 @@ services:
     environment:
       BOT_TOKEN: ${BOT_TOKEN}
       ADMIN_TG_ID: ${ADMIN_TG_ID}
+      TIMEZONE: ${TIMEZONE}
     <<: *logging
