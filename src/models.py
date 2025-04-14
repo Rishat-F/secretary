@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -71,7 +72,10 @@ class Service(Base):
 
 class Appointment(Base):
     __tablename__ = "appointment"
-    __table_args__ = {"comment": "Прием (оказание услуги)"}
+    __table_args__ = (
+        CheckConstraint("starts_at > CURRENT_TIMESTAMP", name="starts_at_gt_current_timestamp"),
+        {"comment": "Прием (оказание услуги)"},
+    )
 
     appointment_id: Mapped[int] = mapped_column(
         Integer,
@@ -106,7 +110,10 @@ class Appointment(Base):
 
 class Slot(Base):
     __tablename__ = "slot"
-    __table_args__ = {"comment": "Слоты приема (30 минутные интервалы)"}
+    __table_args__ = (
+        CheckConstraint("datetime_ > CURRENT_TIMESTAMP", name="datetime__gt_current_timestamp"),
+        {"comment": "Слоты приема (30 минутные интервалы)"},
+    )
 
     datetime_: Mapped[datetime] = mapped_column(
         DateTime,
@@ -118,7 +125,10 @@ class Slot(Base):
 
 class Reservation(Base):
     __tablename__ = "reservation"
-    __table_args__ = {"comment": "Бронирование слотов (запись на прием)"}
+    __table_args__ = (
+        CheckConstraint("datetime_ > CURRENT_TIMESTAMP", name="datetime__gt_current_timestamp"),
+        {"comment": "Бронирование слотов (запись на прием)"},
+    )
 
     datetime_: Mapped[datetime] = mapped_column(
         ForeignKey("slot.datetime_", ondelete="CASCADE"),
