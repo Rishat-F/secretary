@@ -48,7 +48,6 @@ from src.utils import (
     form_services_list_text,
     form_appointments_list_text,
     from_utc,
-    date_to_lang,
     get_days_keyboard_buttons,
     get_utc_now,
     get_years_with_months_days,
