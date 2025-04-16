@@ -37,7 +37,7 @@ class Service(Base):
     __tablename__ = "service"
     __table_args__ = (
         CheckConstraint(
-            f"(price > 0 and price < {MAX_PRICE}",
+            f"price > 0 and price < {MAX_PRICE}",
             name="price_check"
         ),
         CheckConstraint(
