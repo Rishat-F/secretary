@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from src.constraints import USLUGA_NAME_MAX_LEN
+from src.constraints import DURATION_MULTIPLIER, MAX_DURATION, USLUGA_NAME_MAX_LEN
 
 
 constraint_naming_conventions = {
@@ -35,7 +35,13 @@ class Base(DeclarativeBase):
 
 class Service(Base):
     __tablename__ = "service"
-    __table_args__ = {"comment": "Услуга (например, 'Стрижка модельная')"}
+    __table_args__ = (
+        CheckConstraint(
+            f"(duration % {DURATION_MULTIPLIER}) == 0 and duration > 0 and duration < {MAX_DURATION}",
+            name="duration_check"
+        ),
+        {"comment": "Услуга (например, 'Стрижка модельная')"},
+    )
 
     service_id: Mapped[int] = mapped_column(
         Integer,
@@ -57,7 +63,7 @@ class Service(Base):
     duration: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Длительность предоставления услуги (в минутах, должно быть кратно 30)",
+        comment="Длительность предоставления услуги (в минутах, должно быть кратно 30, больше 0 и меньше 1000)",
     )
     deleted: Mapped[bool] = mapped_column(
         Boolean,
