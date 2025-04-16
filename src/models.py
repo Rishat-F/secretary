@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from src.constraints import DURATION_MULTIPLIER, MAX_DURATION, USLUGA_NAME_MAX_LEN
+from src.constraints import DURATION_MULTIPLIER, MAX_DURATION, MAX_PRICE, USLUGA_NAME_MAX_LEN
 
 
 constraint_naming_conventions = {
@@ -37,6 +37,10 @@ class Service(Base):
     __tablename__ = "service"
     __table_args__ = (
         CheckConstraint(
+            f"(price > 0 and price < {MAX_PRICE}",
+            name="price_check"
+        ),
+        CheckConstraint(
             f"(duration % {DURATION_MULTIPLIER}) == 0 and duration > 0 and duration < {MAX_DURATION}",
             name="duration_check"
         ),
@@ -58,7 +62,7 @@ class Service(Base):
     price: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Стоимость услуги",
+        comment="Стоимость услуги (в рублях, должно быть больше 0 и меньше 1000000",
     )
     duration: Mapped[int] = mapped_column(
         Integer,
