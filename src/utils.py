@@ -94,7 +94,7 @@ def validate_service_duration(duration_input: str) -> int | ValidationErrorMessa
     DURATION_SHOULD_BE_INTEGER = "Длительность должна быть целым числом"
     DURATION_SHOULD_BE_GT_0 = "Длительность должна быть больше 0"
     DURATION_SHOULD_BE_LT_MAX_DURATION = f"Длительность должна быть менее {MAX_DURATION} минут"
-    DURATION_MUST_BE_A_MULTIPLE_OF_N = (
+    DURATION_SHOULD_BE_A_MULTIPLE_OF_N = (
         f"Длительность должна быть кратна {DURATION_MULTIPLIER}"
     )
     WRONG_FORMAT = "Неверный формат записи числа"
@@ -128,7 +128,7 @@ def validate_service_duration(duration_input: str) -> int | ValidationErrorMessa
     if duration >= MAX_DURATION:
         return DURATION_SHOULD_BE_LT_MAX_DURATION
     if (duration % DURATION_MULTIPLIER) != 0:
-        return DURATION_MUST_BE_A_MULTIPLE_OF_N
+        return DURATION_SHOULD_BE_A_MULTIPLE_OF_N
     return duration
 
 
