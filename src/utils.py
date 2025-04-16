@@ -9,7 +9,7 @@ import pytz
 
 from src import messages
 from src.config import TIMEZONE
-from src.constraints import DURATION_MULTIPLIER, MAX_DURATION, USLUGA_NAME_MAX_LEN
+from src.constraints import DURATION_MULTIPLIER, MAX_DURATION, MAX_PRICE, USLUGA_NAME_MAX_LEN
 from src.exceptions import (
     DayBecomeNotAvailable,
     MonthBecomeNotAvailable,
@@ -56,12 +56,37 @@ def validate_service_name(name: str) -> str:
 def validate_service_price(price_input: str) -> int | ValidationErrorMessage:
     PRICE_SHOULD_BE_INTEGER = "Цена должна быть целым числом"
     PRICE_SHOULD_BE_GT_0 = "Цена должна быть больше 0"
-    try:
-        price = int(price_input)
-    except ValueError:
+    PRICE_SHOULD_BE_LT_MAX_PRICE = f"Цена должна быть менее {MAX_PRICE} рублей"
+    WRONG_FORMAT = "Неверный формат записи числа"
+    exponent = r"[eE]"
+
+    price_input = price_input.strip()
+    price_input = price_input.replace(",", ".")
+    re.sub(r"\.0{2,}$", ".0", price_input)
+    if "." in price_input and re.search(r"\.[1-9]+0+$", price_input):
+        price_input = price_input.rstrip("0")
+    if re.match(r"[+-]*0[^.]", price_input):
+        return WRONG_FORMAT
+    if re.search(exponent, price_input):
+        return WRONG_FORMAT
+    if re.fullmatch(r"[+-]?\.\d+", price_input):
+        return WRONG_FORMAT
+    if re.fullmatch(r"[+-]?\d+\.", price_input):
+        return WRONG_FORMAT
+    if price_input.count(".") >= 1:
         return PRICE_SHOULD_BE_INTEGER
+    if re.search(r"[-+\.\d][-+]", price_input):
+        return PRICE_SHOULD_BE_INTEGER
+    if re.match(r"\+?\d{7,}\.?\d*", price_input):
+        return PRICE_SHOULD_BE_LT_MAX_PRICE
+    if re.search(r"[^\d\+\-\.]", price_input):
+        return PRICE_SHOULD_BE_INTEGER
+
+    price = int(price_input)
     if price <= 0:
         return PRICE_SHOULD_BE_GT_0
+    if price >= MAX_PRICE:
+        return PRICE_SHOULD_BE_LT_MAX_PRICE
     return price
 
 
