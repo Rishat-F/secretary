@@ -62,12 +62,15 @@ class Service(Base):
     price: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Стоимость услуги (в рублях, должно быть больше 0 и меньше 1000000",
+        comment=f"Стоимость услуги (в рублях, должно быть больше 0 и меньше {MAX_PRICE}",
     )
     duration: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Длительность предоставления услуги (в минутах, должно быть кратно 30, больше 0 и меньше 1000)",
+        comment=(
+            "Длительность предоставления услуги "
+            f"(в минутах, должно быть кратно {DURATION_MULTIPLIER}, больше 0 и меньше {MAX_DURATION})"
+        ),
     )
     deleted: Mapped[bool] = mapped_column(
         Boolean,
