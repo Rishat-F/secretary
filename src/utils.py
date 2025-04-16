@@ -9,7 +9,7 @@ import pytz
 
 from src import messages
 from src.config import TIMEZONE
-from src.constraints import DURATION_MULTIPLIER, USLUGA_NAME_MAX_LEN
+from src.constraints import DURATION_MULTIPLIER, MAX_DURATION, USLUGA_NAME_MAX_LEN
 from src.exceptions import (
     DayBecomeNotAvailable,
     MonthBecomeNotAvailable,
@@ -68,15 +68,40 @@ def validate_service_price(price_input: str) -> int | ValidationErrorMessage:
 def validate_service_duration(duration_input: str) -> int | ValidationErrorMessage:
     DURATION_SHOULD_BE_INTEGER = "Длительность должна быть целым числом"
     DURATION_SHOULD_BE_GT_0 = "Длительность должна быть больше 0"
+    DURATION_SHOULD_BE_LT_MAX_DURATION = f"Длительность должна быть менее {MAX_DURATION} минут"
     DURATION_MUST_BE_A_MULTIPLE_OF_N = (
         f"Длительность должна быть кратна {DURATION_MULTIPLIER}"
     )
-    try:
-        duration = int(duration_input)
-    except ValueError:
+    WRONG_FORMAT = "Неверный формат записи числа"
+    exponent = r"[eE]"
+
+    duration_input = duration_input.strip()
+    duration_input = duration_input.replace(",", ".")
+    re.sub(r"\.0{2,}$", ".0", duration_input)
+    if "." in duration_input and re.search(r"\.[1-9]+0+$", duration_input):
+        duration_input = duration_input.rstrip("0")
+    if re.match(r"[+-]*0[^.]", duration_input):
+        return WRONG_FORMAT
+    if re.search(exponent, duration_input):
+        return WRONG_FORMAT
+    if re.fullmatch(r"[+-]?\.\d+", duration_input):
+        return WRONG_FORMAT
+    if re.fullmatch(r"[+-]?\d+\.", duration_input):
+        return WRONG_FORMAT
+    if duration_input.count(".") >= 1:
         return DURATION_SHOULD_BE_INTEGER
+    if re.search(r"[-+\.\d][-+]", duration_input):
+        return DURATION_SHOULD_BE_INTEGER
+    if re.match(r"\+?\d{4,}\.?\d*", duration_input):
+        return DURATION_SHOULD_BE_LT_MAX_DURATION
+    if re.search(r"[^\d\+\-\.]", duration_input):
+        return DURATION_SHOULD_BE_INTEGER
+
+    duration = int(duration_input)
     if duration <= 0:
         return DURATION_SHOULD_BE_GT_0
+    if duration >= MAX_DURATION:
+        return DURATION_SHOULD_BE_LT_MAX_DURATION
     if (duration % DURATION_MULTIPLIER) != 0:
         return DURATION_MUST_BE_A_MULTIPLE_OF_N
     return duration
