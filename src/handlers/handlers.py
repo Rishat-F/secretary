@@ -15,7 +15,7 @@ from src.exceptions import (
     MonthBecomeNotAvailable,
     YearBecomeNotAvailable,
 )
-from src.handlers.business_logic import get_times_possible_for_appointment
+from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
 from src.models import Appointment
 from src.handlers.logic import (
     LogicResult,

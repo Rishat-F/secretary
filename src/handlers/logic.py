@@ -15,7 +15,7 @@ from src.database import (
     update_service,
 )
 from src.exceptions import ServiceNameTooLongError
-from src.handlers.business_logic import get_times_possible_for_appointment
+from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
 from src.keyboards import (
     BACK,
     CREATE,
