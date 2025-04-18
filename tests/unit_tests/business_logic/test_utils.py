@@ -3,12 +3,14 @@ import pytest
 from src.business_logic.utils import (
     MINIMAL_TIMES_STATUSES_LEN,
     TIMES_STATUSES_LEN,
+    _get_duration_multiplier_by_times_statues,
     _get_times_statuses_len,
     _no_isolated_selected,
     _no_selected_edge_combination,
     _no_edge_selected_combination,
     check_clicked_index_assertions,
     check_times_statuses_assertions,
+    get_times_statuses_view,
 )
 
 
@@ -38,6 +40,26 @@ def test_minimal_times_statuses_len():
 )
 def test__get_times_statuses_len(duration_multiplier, expected_result):
     assert _get_times_statuses_len(duration_multiplier) == expected_result
+
+
+@pytest.mark.parametrize(
+    "times_statuses_len,expected_result",
+    [
+        (3, 720),
+        (4, 480),
+        (5, 360),
+        (7, 240),
+        (13, 120),
+        (25, 60),
+        (49, 30),
+        (73, 20),
+        (97, 15),
+        (145, 10),
+        (289, 5),
+    ],
+)
+def test__get_duration_multiplier_by_times_statues(times_statuses_len, expected_result):
+    assert _get_duration_multiplier_by_times_statues(times_statuses_len) == expected_result
 
 
 @pytest.mark.parametrize(
@@ -294,3 +316,102 @@ def test_check_clicked_index_assertions_raises_assertion_error(
     monkeypatch.setattr("src.business_logic.utils.TIMES_STATUSES_LEN", 3)
     with pytest.raises(AssertionError):
         check_clicked_index_assertions(clicked_index)
+
+
+@pytest.mark.parametrize(
+    "times_statuses,expected_result",
+    [
+        (
+            ["not_selected", "not_selected", "not_selected", "not_selected"],
+            "Рабочие часы не выбраны",
+        ),
+        (
+            ["edge", "not_selected", "not_selected", "not_selected"],
+            "Выбранные рабочие часы:\n00:00-???",
+        ),
+        (
+            ["not_selected", "not_selected", "not_selected", "edge"],
+            "Выбранные рабочие часы:\n???-00:00",
+        ),
+        (
+            ["not_selected", "edge", "not_selected", "not_selected"],
+            "Выбранные рабочие часы:\n???-08:00-???",
+        ),
+        (
+            ["selected", "selected", "selected"],
+            "Выбранные рабочие часы:\n00:00-00:00",
+        ),
+        (
+            ["selected", "selected", "selected", "selected", "selected"],
+            "Выбранные рабочие часы:\n00:00-00:00",
+        ),
+        (
+            ["edge", "not_selected", "selected", "selected", "not_selected"],
+            "Выбранные рабочие часы:\n00:00-???\n12:00-18:00",
+        ),
+        (
+            ["selected", "selected", "not_selected", "edge", "not_selected"],
+            "Выбранные рабочие часы:\n00:00-06:00\n???-18:00-???",
+        ),
+        (
+            ["selected", "selected", "not_selected", "selected", "selected"],
+            "Выбранные рабочие часы:\n00:00-06:00\n18:00-00:00",
+        ),
+        (
+            [
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected",
+            ],
+            "Выбранные рабочие часы:\n00:00-00:00",
+        ),
+        (
+            [
+                "selected", "selected", "not_selected", "not_selected",
+                "selected", "selected", "selected", "not_selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected",
+            ],
+            "Выбранные рабочие часы:\n00:00-00:30\n02:00-03:00\n04:00-06:30\n16:00-00:00",
+        ),
+        (
+            [
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "not_selected", "selected", "selected",
+                "selected", "selected", "selected", "selected",
+                "selected", "selected", "selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected", "not_selected", "not_selected", "not_selected",
+                "not_selected",
+            ],
+            "Выбранные рабочие часы:\n08:00-12:00\n13:00-17:00",
+        ),
+    ],
+)
+def test_get_times_statuses_view(times_statuses, expected_result):
+    assert get_times_statuses_view(times_statuses) == expected_result
