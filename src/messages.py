@@ -49,6 +49,8 @@ SERVICE_DELETED = 'Услуга <b>"{name}"</b> удалена!'
 
 CHOOSE_SERVICE_TO_MAKE_APPOINTMENT = "Введите порядковый номер услуги, на которую хотите записаться"
 NO_POSSIBLE_TIMES_FOR_SERVICE = 'Времени, доступного для записи на услугу <b>"{name}"</b>, нет'
+MAKING_APPOINTMENT = 'Запись на услугу <b>"{service_name}"</b>'
+CHOOSE_DATE = "Выберите дату"
 CHOOSE_YEAR = "Выберите год"
 YEAR_NOT_AVAILABLE = "{lang_year} недоступен для записи"
 YEAR_BECOME_NOT_AVAILABLE = "{lang_year} стал недоступен для записи"

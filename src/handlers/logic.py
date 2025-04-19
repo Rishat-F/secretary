@@ -660,11 +660,11 @@ async def choose_service_for_appointment_logic(
                 )
                 messages_to_answer = [
                     MessageToAnswer(
-                        f'Запись на услугу <b>"{service_name_for_appointment}"</b>',
+                        messages.MAKING_APPOINTMENT.format(service_name=service_name_for_appointment),
                         types.ReplyKeyboardRemove(),
                     ),
                     MessageToAnswer(
-                        "Выберите дату",
+                        messages.CHOOSE_DATE,
                         get_days_keyboard(chosen_year, chosen_month, days_to_choose),
                     ),
                 ]
