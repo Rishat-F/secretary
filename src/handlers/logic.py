@@ -18,7 +18,10 @@ from src.exceptions import ServiceNameTooLongError
 from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
 from src.business_logic.utils import (
     get_days_keyboard_buttons,
+    get_set_working_hours_keyboard_buttons,
+    get_times_statuses_view,
     get_years_with_months_days,
+    initial_times_statuses,
 )
 from src.keyboards import (
     BACK,
@@ -33,10 +36,11 @@ from src.keyboards import (
     UPDATE,
     UPDATE_ANOTHER_USLUGA,
     ZAPIS_NA_PRIEM,
-    DateTimePicker,
+    AppointmentDateTimePicker,
     back_main_keyboard,
     get_days_keyboard,
     get_services_to_update_keyboard,
+    get_set_working_hours_keyboard,
     main_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,
@@ -45,7 +49,7 @@ from src.keyboards import (
 )
 from src.models import Service
 from src.secrets import ADMIN_TG_ID
-from src.states import ServicesActions, MakeAppointment
+from src.states import ServicesActions, MakeAppointment, SetSchedule
 from src.utils import (
     date_to_lang,
     form_service_view,
@@ -678,7 +682,7 @@ async def choose_service_for_appointment_logic(
                 return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
 
 
-def alert_not_available_to_choose_logic(callback_data: DateTimePicker) -> str:
+def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker) -> str:
     alert_text = ""
     year = callback_data.year
     month = callback_data.month
@@ -691,3 +695,24 @@ def alert_not_available_to_choose_logic(callback_data: DateTimePicker) -> str:
     else:
         alert_text = messages.YEAR_NOT_AVAILABLE.format(lang_year=lang_date)
     return alert_text
+
+
+def schedule_logic() -> LogicResult:
+    times_statuses = initial_times_statuses
+    times_statuses_view = get_times_statuses_view(times_statuses)
+    set_working_hours_keyboard_buttons = get_set_working_hours_keyboard_buttons(
+        times_statuses,
+    )
+    messages_to_answer = [
+        MessageToAnswer(
+            messages.SCHEDULE_DEFINING,
+            types.ReplyKeyboardRemove(),
+        ),
+        MessageToAnswer(
+            messages.SET_WORKING_HOURS.format(times_statuses_view=times_statuses_view),
+            get_set_working_hours_keyboard(set_working_hours_keyboard_buttons),
+        ),
+    ]
+    state_to_set = SetSchedule.set_working_hours
+    data_to_set = {"times_statuses": times_statuses}
+    return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
