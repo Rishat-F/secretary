@@ -16,6 +16,16 @@ from src.exceptions import (
     YearBecomeNotAvailable,
 )
 from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
+from src.business_logic.utils import (
+    check_chosen_datetime_is_possible,
+    get_datetimes_needed_for_appointment,
+    get_days_keyboard_buttons,
+    get_months_keyboard_buttons,
+    get_years_keyboard_buttons,
+    get_times_keyboard_buttons,
+    get_years_with_months,
+    get_years_with_months_days,
+)
 from src.models import Appointment
 from src.handlers.logic import (
     LogicResult,
@@ -55,18 +65,11 @@ from src.keyboards import (
 from src.secrets import ADMIN_TG_ID
 from src.states import MakeAppointment
 from src.utils import (
-    check_chosen_datetime_is_possible,
     date_to_lang,
     form_appointment_view,
     from_utc,
-    get_datetimes_needed_for_appointment,
-    get_days_keyboard_buttons,
-    get_months_keyboard_buttons,
     get_utc_now,
-    get_years_keyboard_buttons,
-    get_times_keyboard_buttons,
-    get_years_with_months,
-    get_years_with_months_days, to_utc,
+    to_utc,
 )
 
 
