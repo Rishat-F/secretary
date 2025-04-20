@@ -385,7 +385,7 @@ def get_set_working_hours_keyboard_buttons(times_statuses: list[str]) -> list[In
         if times_statuses[i] == ScheduleTimeStatus.EDGE:
             text = "⚪️"
         elif times_statuses[i] == ScheduleTimeStatus.SELECTED:
-            text = " "
+            text = "✔️"
         else:
             text = iso_time
         result.append(InlineButton("time_clicked", text, value=str(i)))
