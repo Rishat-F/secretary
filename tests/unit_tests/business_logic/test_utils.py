@@ -14,13 +14,13 @@ from src.business_logic.utils import (
     check_chosen_datetime_is_possible,
     check_times_statuses_assertions,
     get_datetimes_needed_for_appointment,
+    get_initial_times_statuses,
     get_months_keyboard_buttons,
     get_times_for_appointment,
     get_times_statuses_view,
     get_years_keyboard_buttons,
     get_years_with_months,
     get_years_with_months_days,
-    initial_times_statuses,
 )
 from src.exceptions import (
     DayBecomeNotAvailable,
@@ -39,8 +39,8 @@ def test_minimal_times_statuses_len():
     assert MINIMAL_TIMES_STATUSES_LEN == 3
 
 
-def test_initial_times_statuses():
-    assert initial_times_statuses == ["not_selected"] * 49
+def test_get_initial_times_statuses():
+    assert get_initial_times_statuses() == ["not_selected"] * 49
 
 
 @pytest.mark.parametrize(
