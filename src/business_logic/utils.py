@@ -129,10 +129,10 @@ def get_times_statuses_view(times_statuses: list[str]) -> str:
         if current_element == ScheduleTimeStatus.EDGE:
             view += "\n"
             if prev_element:
-                view += "???-"
+                view += "...-"
             view += iso_time
             if next_element:
-                view += "-???"
+                view += "-..."
         elif current_element == ScheduleTimeStatus.SELECTED:
             if prev_element != ScheduleTimeStatus.SELECTED:
                 view += f"\n{iso_time}-"
