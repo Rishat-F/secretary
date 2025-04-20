@@ -18,10 +18,10 @@ from src.exceptions import ServiceNameTooLongError
 from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
 from src.business_logic.utils import (
     get_days_keyboard_buttons,
+    get_initial_times_statuses,
     get_set_working_hours_keyboard_buttons,
     get_times_statuses_view,
     get_years_with_months_days,
-    initial_times_statuses,
 )
 from src.keyboards import (
     BACK,
@@ -698,7 +698,7 @@ def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker
 
 
 def schedule_logic() -> LogicResult:
-    times_statuses = initial_times_statuses
+    times_statuses = get_initial_times_statuses()
     times_statuses_view = get_times_statuses_view(times_statuses)
     set_working_hours_keyboard_buttons = get_set_working_hours_keyboard_buttons(
         times_statuses,

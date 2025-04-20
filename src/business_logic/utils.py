@@ -28,7 +28,9 @@ class ScheduleTimeStatus:
     EDGE = "edge"
 
 
-initial_times_statuses = [ScheduleTimeStatus.NOT_SELECTED] * TIMES_STATUSES_LEN
+def get_initial_times_statuses() -> list[str]:
+    statuses_times = [ScheduleTimeStatus.NOT_SELECTED] * TIMES_STATUSES_LEN
+    return statuses_times
 
 
 def _no_isolated_selected(times_statuses: list[str]) -> bool:
