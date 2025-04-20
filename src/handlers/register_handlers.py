@@ -6,6 +6,7 @@ from src.handlers.handlers import (
     alert_not_available_to_choose,
     appointment_confirmed,
     cancel_choose_date_for_appointment,
+    cancel_set_schedule,
     choose_service_field_to_update,
     choose_service_to_delete,
     choose_service_to_update,
@@ -18,6 +19,7 @@ from src.handlers.handlers import (
     go_to_choose_year_for_appointment,
     go_to_confirm_appointment,
     ignore_inline_button,
+    schedule,
     set_service_duration,
     set_service_name,
     set_service_new_duration,
@@ -27,10 +29,11 @@ from src.handlers.handlers import (
     start_bot,
     services,
     appointments,
+    time_clicked,
 )
-from src.keyboards import USLUGI, ZAPISI, DateTimePicker
+from src.keyboards import SCHEDULE, USLUGI, ZAPISI, AppointmentDateTimePicker, ScheduleDateTimePicker
 from src.secrets import ADMIN_TG_ID
-from src.states import ServicesActions, MakeAppointment
+from src.states import ServicesActions, MakeAppointment, SetSchedule
 
 
 def register_handlers(dp: Dispatcher) -> None:
@@ -56,11 +59,11 @@ def register_handlers(dp: Dispatcher) -> None:
             MakeAppointment.choose_time,
             MakeAppointment.confirm,
         ),
-        DateTimePicker.filter(F.action == "cancel"),
+        AppointmentDateTimePicker.filter(F.action == "cancel"),
     )
     dp.callback_query.register(
         ignore_inline_button,
-        DateTimePicker.filter(F.action == "ignore"),
+        AppointmentDateTimePicker.filter(F.action == "ignore"),
     )
     dp.callback_query.register(
         go_to_choose_year_for_appointment,
@@ -69,7 +72,7 @@ def register_handlers(dp: Dispatcher) -> None:
             MakeAppointment.choose_day,
             MakeAppointment.choose_time,
         ),
-        DateTimePicker.filter(F.action == "choose_year"),
+        AppointmentDateTimePicker.filter(F.action == "choose_year"),
     )
     dp.callback_query.register(
         go_to_choose_month_for_appointment,
@@ -78,7 +81,7 @@ def register_handlers(dp: Dispatcher) -> None:
             MakeAppointment.choose_day,
             MakeAppointment.choose_time,
         ),
-        DateTimePicker.filter(F.action == "choose_month"),
+        AppointmentDateTimePicker.filter(F.action == "choose_month"),
     )
     dp.callback_query.register(
         go_to_choose_day_for_appointment,
@@ -86,7 +89,7 @@ def register_handlers(dp: Dispatcher) -> None:
             MakeAppointment.choose_month,
             MakeAppointment.choose_time,
         ),
-        DateTimePicker.filter(F.action == "choose_day"),
+        AppointmentDateTimePicker.filter(F.action == "choose_day"),
     )
     dp.callback_query.register(
         go_to_choose_time_for_appointment,
@@ -94,17 +97,17 @@ def register_handlers(dp: Dispatcher) -> None:
             MakeAppointment.choose_day,
             MakeAppointment.confirm,
         ),
-        DateTimePicker.filter(F.action == "choose_time"),
+        AppointmentDateTimePicker.filter(F.action == "choose_time"),
     )
     dp.callback_query.register(
         go_to_confirm_appointment,
         MakeAppointment.choose_time,
-        DateTimePicker.filter(F.action == "confirm"),
+        AppointmentDateTimePicker.filter(F.action == "confirm"),
     )
     dp.callback_query.register(
         appointment_confirmed,
         MakeAppointment.confirm,
-        DateTimePicker.filter(F.action == "confirmed"),
+        AppointmentDateTimePicker.filter(F.action == "confirmed"),
     )
     dp.callback_query.register(
         alert_not_available_to_choose,
@@ -113,7 +116,7 @@ def register_handlers(dp: Dispatcher) -> None:
             MakeAppointment.choose_month,
             MakeAppointment.choose_day,
         ),
-        DateTimePicker.filter(F.action == "not_available"),
+        AppointmentDateTimePicker.filter(F.action == "not_available"),
     )
     dp.message.register(
         choose_services_action,
@@ -189,4 +192,19 @@ def register_handlers(dp: Dispatcher) -> None:
         appointments,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == ZAPISI.lower(),
+    )
+    dp.message.register(
+        schedule,
+        F.chat.type == ChatType.PRIVATE.value,
+        F.text.lower() == SCHEDULE.lower(),
+    )
+    dp.callback_query.register(
+        cancel_set_schedule,
+        SetSchedule.set_working_hours,
+        ScheduleDateTimePicker.filter(F.action == "cancel"),
+    )
+    dp.callback_query.register(
+        time_clicked,
+        SetSchedule.set_working_hours,
+        ScheduleDateTimePicker.filter(F.action == "time_clicked"),
     )
