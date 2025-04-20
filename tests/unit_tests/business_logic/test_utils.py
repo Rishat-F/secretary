@@ -20,6 +20,7 @@ from src.business_logic.utils import (
     get_years_keyboard_buttons,
     get_years_with_months,
     get_years_with_months_days,
+    initial_times_statuses,
 )
 from src.exceptions import (
     DayBecomeNotAvailable,
@@ -36,6 +37,10 @@ def test_times_statuses_len():
 
 def test_minimal_times_statuses_len():
     assert MINIMAL_TIMES_STATUSES_LEN == 3
+
+
+def test_initial_times_statuses():
+    assert initial_times_statuses == ["not_selected"] * 49
 
 
 @pytest.mark.parametrize(

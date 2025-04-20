@@ -16,11 +16,14 @@ from src.exceptions import (
     YearBecomeNotAvailable,
 )
 from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
+from src.business_logic.resolve_times_status import resolve_times_statuses
 from src.business_logic.utils import (
     check_chosen_datetime_is_possible,
     get_datetimes_needed_for_appointment,
     get_days_keyboard_buttons,
     get_months_keyboard_buttons,
+    get_set_working_hours_keyboard_buttons,
+    get_times_statuses_view,
     get_years_keyboard_buttons,
     get_times_keyboard_buttons,
     get_years_with_months,
@@ -36,6 +39,7 @@ from src.handlers.logic import (
     choose_service_for_appointment_logic,
     choose_services_action_logic,
     choose_appointments_action_logic,
+    schedule_logic,
     set_service_duration_logic,
     set_service_name_logic,
     set_service_new_duration_logic,
@@ -53,14 +57,16 @@ from src.database import (
     insert_reservations,
 )
 from src.keyboards import (
+    ScheduleDateTimePicker,
     appointments_keyboard,
     get_confirm_appointment_keyboard,
     get_days_keyboard,
     get_months_keyboard,
+    get_set_working_hours_keyboard,
     get_times_keyboard,
     get_years_keyboard,
     main_keyboard,
-    DateTimePicker,
+    AppointmentDateTimePicker,
 )
 from src.secrets import ADMIN_TG_ID
 from src.states import MakeAppointment
@@ -299,7 +305,7 @@ async def go_to_choose_year_for_appointment(
 
 async def go_to_choose_month_for_appointment(
     callback: types.CallbackQuery,
-    callback_data: DateTimePicker,
+    callback_data: AppointmentDateTimePicker,
     state: FSMContext,
 ) -> None:
     if not callback.message:
@@ -321,7 +327,7 @@ async def go_to_choose_month_for_appointment(
 
 async def go_to_choose_day_for_appointment(
     callback: types.CallbackQuery,
-    callback_data: DateTimePicker,
+    callback_data: AppointmentDateTimePicker,
     state: FSMContext,
 ) -> None:
     if not callback.message:
@@ -344,7 +350,7 @@ async def go_to_choose_day_for_appointment(
 
 async def go_to_choose_time_for_appointment(
     callback: types.CallbackQuery,
-    callback_data: DateTimePicker,
+    callback_data: AppointmentDateTimePicker,
     state: FSMContext,
 ) -> None:
     if not callback.message:
@@ -378,7 +384,7 @@ async def go_to_choose_time_for_appointment(
 
 async def go_to_confirm_appointment(
     callback: types.CallbackQuery,
-    callback_data: DateTimePicker,
+    callback_data: AppointmentDateTimePicker,
     state: FSMContext,
 ) -> None:
     if not callback.message:
@@ -410,7 +416,7 @@ async def go_to_confirm_appointment(
 
 async def appointment_confirmed(
     callback: types.CallbackQuery,
-    callback_data: DateTimePicker,
+    callback_data: AppointmentDateTimePicker,
     state: FSMContext,
     async_session: async_sessionmaker[AsyncSession],
 ) -> None:
@@ -528,7 +534,7 @@ async def appointment_confirmed(
 
 async def alert_not_available_to_choose(
     callback: types.CallbackQuery,
-    callback_data: DateTimePicker,
+    callback_data: AppointmentDateTimePicker,
 ) -> None:
     alert_text = alert_not_available_to_choose_logic(callback_data)
     await callback.answer(alert_text, show_alert=True)
@@ -551,4 +557,48 @@ async def cancel_choose_date_for_appointment(
     )
     await state.set_data({})
     await state.set_state(MakeAppointment.choose_action)
+    await callback.answer()
+
+
+async def schedule(
+    message: types.Message,
+    state: FSMContext,
+) -> None:
+    if message.from_user is None:
+        return None
+    result = schedule_logic()
+    await _process_logic_return(result, fsm_context=state, message=message)
+
+
+async def time_clicked(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    callback_data: ScheduleDateTimePicker,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    times_statuses = data["times_statuses"]
+    times_statuses = resolve_times_statuses(times_statuses, callback_data.index)
+    times_statuses_view = get_times_statuses_view(times_statuses)
+    set_working_hours_keyboard_buttons = get_set_working_hours_keyboard_buttons(times_statuses)
+    await callback.message.edit_text(
+        text=messages.SET_WORKING_HOURS.format(times_statuses_view=times_statuses_view),
+        reply_markup=get_set_working_hours_keyboard(set_working_hours_keyboard_buttons),
+    )
+    await callback.answer()
+
+
+async def cancel_set_schedule(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    await callback.message.delete()
+    await callback.message.answer(
+        text=messages.CANCELED,
+        reply_markup=main_keyboard,
+    )
+    await state.clear()
     await callback.answer()

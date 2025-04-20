@@ -28,6 +28,9 @@ class ScheduleTimeStatus:
     EDGE = "edge"
 
 
+initial_times_statuses = [ScheduleTimeStatus.NOT_SELECTED] * TIMES_STATUSES_LEN
+
+
 def _no_isolated_selected(times_statuses: list[str]) -> bool:
     assert len(times_statuses) >= MINIMAL_TIMES_STATUSES_LEN
     if (
@@ -373,3 +376,17 @@ def check_chosen_datetime_is_possible(
         )
     else:
         return None
+
+
+def get_set_working_hours_keyboard_buttons(times_statuses: list[str]) -> list[InlineButton]:
+    result = []
+    for i in range(len(times_statuses)):
+        iso_time = _get_iso_time_from_time_index(i, DURATION_MULTIPLIER)
+        if times_statuses[i] == ScheduleTimeStatus.EDGE:
+            text = "⚪️"
+        elif times_statuses[i] == ScheduleTimeStatus.SELECTED:
+            text = "✅"
+        else:
+            text = iso_time
+        result.append(InlineButton("time_clicked", text, value=str(i)))
+    return result
