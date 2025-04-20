@@ -38,7 +38,8 @@ class InlineButton(NamedTuple):
 
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI), KeyboardButton(text=SCHEDULE)],
+        [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
+        [KeyboardButton(text=SCHEDULE)],
     ],
     resize_keyboard=True,
 )
