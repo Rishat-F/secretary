@@ -1,12 +1,11 @@
 """Клавиатуры бота."""
 
 from datetime import datetime
+from typing import NamedTuple
 
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-
-from src.utils import InlineButton
 
 BACK = "Назад"
 MAIN_MENU = "Главная"
@@ -28,6 +27,12 @@ NO = "Нет"
 
 back_button = KeyboardButton(text=BACK)
 main_menu_button = KeyboardButton(text=MAIN_MENU)
+
+
+class InlineButton(NamedTuple):
+    action: str
+    text: str
+    value: str
 
 
 main_keyboard = ReplyKeyboardMarkup(
