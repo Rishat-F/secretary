@@ -348,15 +348,15 @@ def test_check_clicked_index_assertions_raises_assertion_error(
         ),
         (
             ["edge", "not_selected", "not_selected", "not_selected"],
-            "Выбранные рабочие часы:\n00:00-???",
+            "Выбранные рабочие часы:\n00:00-...",
         ),
         (
             ["not_selected", "not_selected", "not_selected", "edge"],
-            "Выбранные рабочие часы:\n???-00:00",
+            "Выбранные рабочие часы:\n...-00:00",
         ),
         (
             ["not_selected", "edge", "not_selected", "not_selected"],
-            "Выбранные рабочие часы:\n???-08:00-???",
+            "Выбранные рабочие часы:\n...-08:00-...",
         ),
         (
             ["selected", "selected", "selected"],
@@ -368,11 +368,11 @@ def test_check_clicked_index_assertions_raises_assertion_error(
         ),
         (
             ["edge", "not_selected", "selected", "selected", "not_selected"],
-            "Выбранные рабочие часы:\n00:00-???\n12:00-18:00",
+            "Выбранные рабочие часы:\n00:00-...\n12:00-18:00",
         ),
         (
             ["selected", "selected", "not_selected", "edge", "not_selected"],
-            "Выбранные рабочие часы:\n00:00-06:00\n???-18:00-???",
+            "Выбранные рабочие часы:\n00:00-06:00\n...-18:00-...",
         ),
         (
             ["selected", "selected", "not_selected", "selected", "selected"],
