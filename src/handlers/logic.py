@@ -16,6 +16,10 @@ from src.database import (
 )
 from src.exceptions import ServiceNameTooLongError
 from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
+from src.business_logic.utils import (
+    get_days_keyboard_buttons,
+    get_years_with_months_days,
+)
 from src.keyboards import (
     BACK,
     CREATE,
@@ -48,9 +52,7 @@ from src.utils import (
     form_services_list_text,
     form_appointments_list_text,
     from_utc,
-    get_days_keyboard_buttons,
     get_utc_now,
-    get_years_with_months_days,
     preprocess_text,
     validate_service_duration,
     validate_service_name,
