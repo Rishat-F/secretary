@@ -1,7 +1,7 @@
 from src.config import TIMEZONE
 from src.models import Service, Slot
 from src.utils import from_utc
-from src.business_logic.utils import get_times_for_appointment
+from src.business_logic.make_appointment.utils import get_times_for_appointment
 
 
 async def get_times_possible_for_appointment(

@@ -1,6 +1,6 @@
 import pytest
 
-from src.business_logic.resolve_times_statuses import resolve_times_statuses
+from src.business_logic.resolve_times_statuses.resolve_times_statuses import resolve_times_statuses
 
 
 @pytest.mark.parametrize(
@@ -239,7 +239,7 @@ def test_resolve_times_statuses(
     expected_result,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setattr("src.business_logic.utils.TIMES_STATUSES_LEN", len(times_statuses))
+    monkeypatch.setattr("src.business_logic.resolve_times_statuses.utils.TIMES_STATUSES_LEN", len(times_statuses))
     clicked_index = clicked_element - 1
     assert resolve_times_statuses(times_statuses, clicked_index) == expected_result
 
@@ -275,6 +275,6 @@ def test_resolve_times_statuses_raises_assertion_error(
     times_statuses,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setattr("src.business_logic.utils.TIMES_STATUSES_LEN", 3)
+    monkeypatch.setattr("src.business_logic.resolve_times_statuses.utils.TIMES_STATUSES_LEN", 3)
     with pytest.raises(AssertionError):
         resolve_times_statuses(times_statuses, clicked_index=1)
