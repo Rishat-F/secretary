@@ -68,7 +68,7 @@ def _no_selected_edge_combination(times_statuses: list[str]) -> bool:
 
 def check_times_statuses_assertions(times_statuses: list[str]) -> None:
     """
-    Проверка отсутствия невозможных сценариев для times_status.
+    Проверка отсутствия невозможных сценариев для times_statuses.
 
     При наличии невозможного сценария вызывается AssertionError.
     """
@@ -94,7 +94,7 @@ def check_clicked_index_assertions(clicked_index: int) -> None:
     assert clicked_index in range(TIMES_STATUSES_LEN)
 
 
-def _get_duration_multiplier_by_times_statues(times_statuses_len: int) -> int:
+def _get_duration_multiplier_by_times_statuses(times_statuses_len: int) -> int:
     assert times_statuses_len >= MINIMAL_TIMES_STATUSES_LEN
     duration_multiplier = 24*60/(times_statuses_len - 1)
     return int(duration_multiplier)
@@ -110,7 +110,7 @@ def _get_iso_time_from_time_index(index: int, duration_multiplier: int) -> str:
 
 def get_times_statuses_view(times_statuses: list[str]) -> str:
     view = ""
-    duration_multiplier = _get_duration_multiplier_by_times_statues(len(times_statuses))
+    duration_multiplier = _get_duration_multiplier_by_times_statuses(len(times_statuses))
     prev_element = None
     for i in range(len(times_statuses)):
         current_element = times_statuses[i]

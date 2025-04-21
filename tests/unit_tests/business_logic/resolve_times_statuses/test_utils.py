@@ -3,7 +3,7 @@ import pytest
 from src.business_logic.resolve_times_statuses.utils import (
     MINIMAL_TIMES_STATUSES_LEN,
     TIMES_STATUSES_LEN,
-    _get_duration_multiplier_by_times_statues,
+    _get_duration_multiplier_by_times_statuses,
     _get_times_statuses_len,
     _no_isolated_selected,
     _no_selected_edge_combination,
@@ -63,8 +63,8 @@ def test__get_times_statuses_len(duration_multiplier, expected_result):
         (289, 5),
     ],
 )
-def test__get_duration_multiplier_by_times_statues(times_statuses_len, expected_result):
-    assert _get_duration_multiplier_by_times_statues(times_statuses_len) == expected_result
+def test__get_duration_multiplier_by_times_statuses(times_statuses_len, expected_result):
+    assert _get_duration_multiplier_by_times_statuses(times_statuses_len) == expected_result
 
 
 @pytest.mark.parametrize(
