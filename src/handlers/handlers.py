@@ -16,7 +16,7 @@ from src.exceptions import (
     YearBecomeNotAvailable,
 )
 from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
-from src.business_logic.resolve_times_status import resolve_times_statuses
+from src.business_logic.resolve_times_statuses import resolve_times_statuses
 from src.business_logic.utils import (
     check_chosen_datetime_is_possible,
     get_datetimes_needed_for_appointment,

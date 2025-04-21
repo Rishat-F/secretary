@@ -1,6 +1,6 @@
 import pytest
 
-from src.business_logic.resolve_times_status import resolve_times_statuses
+from src.business_logic.resolve_times_statuses import resolve_times_statuses
 
 
 @pytest.mark.parametrize(
