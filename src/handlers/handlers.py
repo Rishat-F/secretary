@@ -15,19 +15,21 @@ from src.exceptions import (
     MonthBecomeNotAvailable,
     YearBecomeNotAvailable,
 )
-from src.business_logic.get_times_possible_for_appointment import get_times_possible_for_appointment
-from src.business_logic.resolve_times_statuses import resolve_times_statuses
-from src.business_logic.utils import (
+from src.business_logic.make_appointment import get_times_possible_for_appointment
+from src.business_logic.make_appointment.utils import (
     check_chosen_datetime_is_possible,
     get_datetimes_needed_for_appointment,
     get_days_keyboard_buttons,
     get_months_keyboard_buttons,
-    get_set_working_hours_keyboard_buttons,
-    get_times_statuses_view,
     get_years_keyboard_buttons,
     get_times_keyboard_buttons,
     get_years_with_months,
     get_years_with_months_days,
+)
+from src.business_logic.resolve_times_statuses.resolve_times_statuses import resolve_times_statuses
+from src.business_logic.resolve_times_statuses.utils import (
+    get_set_working_hours_keyboard_buttons,
+    get_times_statuses_view,
 )
 from src.models import Appointment
 from src.handlers.logic import (

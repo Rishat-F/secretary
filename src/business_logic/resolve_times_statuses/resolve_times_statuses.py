@@ -1,4 +1,4 @@
-from src.business_logic.utils import (
+from src.business_logic.resolve_times_statuses.utils import (
     ScheduleTimeStatus,
     check_clicked_index_assertions,
     check_times_statuses_assertions,
