@@ -281,3 +281,25 @@ def get_set_working_hours_keyboard(
     )
     builder.attach(footer_builder)
     return builder.as_markup()
+
+
+def get_set_working_days_keyboard(
+    set_working_days_keyboard_buttons: list[InlineButton],
+) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for button in set_working_days_keyboard_buttons:
+        builder.button(
+            text=button.text,
+            callback_data=ScheduleDateTimePicker(
+                action=button.action,
+                index=int(button.value),
+            ),
+        )
+    builder.adjust(8)
+    footer_builder = InlineKeyboardBuilder()
+    footer_builder.button(
+        text=CANCEL,
+        callback_data=ScheduleDateTimePicker(action="cancel"),
+    )
+    builder.attach(footer_builder)
+    return builder.as_markup()
