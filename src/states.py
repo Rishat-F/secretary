@@ -33,4 +33,5 @@ class MakeAppointment(StatesGroup):
 class SetSchedule(StatesGroup):
     """Конечный автомат состояний управления графиком работы."""
 
+    set_working_days = State()
     set_working_hours = State()
