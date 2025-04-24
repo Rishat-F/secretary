@@ -1,6 +1,8 @@
 import re
 from typing import Sequence
 
+from src.keyboards import InlineButton
+
 
 MIN_DAYS_STATUSES_LEN = 40
 
@@ -556,3 +558,50 @@ def get_selected_days_view(days: list[int]) -> str:
     view = view.strip()
     view = view.replace(" ", ", ")
     return view
+
+
+def get_initial_days_statuses() -> list[str]:
+    days_statuses = [
+        "not_selected_all", "not_selected_monday", "not_selected_tuesday", "not_selected_wednesday", "not_selected_thursday", "not_selected_friday", "not_selected_saturday", "not_selected_sunday",
+        "not_available_week1", "ignore", "ignore", "ignore", "ignore", "ignore", "not_available_1", "not_available_2",
+        "not_selected_week2", "not_available_3", "not_available_4", "not_selected_5", "not_selected_6", "not_selected_7", "not_selected_8", "not_selected_9",
+        "not_selected_week3", "not_selected_10", "not_selected_11", "not_selected_12", "not_selected_13", "not_selected_14", "not_selected_15", "not_selected_16",
+        "not_selected_week4", "not_selected_17", "not_selected_18", "not_selected_19", "not_selected_20", "not_selected_21", "not_selected_22", "not_selected_23",
+        "not_selected_week5", "not_selected_24", "not_selected_25", "not_selected_26", "not_selected_27", "not_selected_28", "ignore", "ignore",
+    ]
+    return days_statuses
+
+
+_days_of_week = {
+    ScheduleDayGroup.MONDAY: "Пн",
+    ScheduleDayGroup.TUESDAY: "Вт",
+    ScheduleDayGroup.WEDNESDAY: "Ср",
+    ScheduleDayGroup.THURSDAY: "Чт",
+    ScheduleDayGroup.FRIDAY: "Пт",
+    ScheduleDayGroup.SATURDAY: "Сб",
+    ScheduleDayGroup.SUNDAY: "Вс",
+}
+
+
+def get_set_working_days_keyboard_buttons(days_statuses: list[str]) -> list[InlineButton]:
+    result = []
+    for i in range(len(days_statuses)):
+        element = days_statuses[i]
+        status, group_or_day = split_element(element)
+        if group_or_day == ScheduleDayGroup.ALL:
+            text = "↘️"
+        elif is_day_of_week_element(element):
+            text = _days_of_week[group_or_day]
+        elif is_week_element(element):
+            text = "→"
+        else:
+            if status == ScheduleDayStatus.IGNORE:
+                text = " "
+            elif status == ScheduleDayStatus.NOT_AVAILABLE:
+                text = "✖️"
+            elif status == ScheduleDayStatus.NOT_SELECTED:
+                text = group_or_day
+            else:
+                text = "✔️"
+        result.append(InlineButton(status, text, value=str(i)))
+    return result

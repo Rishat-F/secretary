@@ -2,8 +2,10 @@ from aiogram import Dispatcher, F
 from aiogram.enums import ChatType
 from aiogram.filters import or_f
 
+from src.business_logic.resolve_days_statuses.utils import ScheduleDayStatus
 from src.handlers.handlers import (
     alert_not_available_to_choose,
+    alert_not_available_to_choose_day,
     appointment_confirmed,
     cancel_choose_date_for_appointment,
     cancel_set_schedule,
@@ -13,6 +15,7 @@ from src.handlers.handlers import (
     choose_service_for_appointment,
     choose_services_action,
     choose_appointments_action,
+    day_clicked,
     go_to_choose_day_for_appointment,
     go_to_choose_month_for_appointment,
     go_to_choose_time_for_appointment,
@@ -63,7 +66,10 @@ def register_handlers(dp: Dispatcher) -> None:
     )
     dp.callback_query.register(
         ignore_inline_button,
-        AppointmentDateTimePicker.filter(F.action == "ignore"),
+        or_f(
+            AppointmentDateTimePicker.filter(F.action == "ignore"),
+            ScheduleDateTimePicker.filter(F.action == "ignore"),
+        ),
     )
     dp.callback_query.register(
         go_to_choose_year_for_appointment,
@@ -200,11 +206,31 @@ def register_handlers(dp: Dispatcher) -> None:
     )
     dp.callback_query.register(
         cancel_set_schedule,
-        SetSchedule.set_working_hours,
+        or_f(
+            SetSchedule.set_working_days,
+            SetSchedule.set_working_hours,
+        ),
         ScheduleDateTimePicker.filter(F.action == "cancel"),
     )
     dp.callback_query.register(
         time_clicked,
         SetSchedule.set_working_hours,
         ScheduleDateTimePicker.filter(F.action == "time_clicked"),
+    )
+    dp.callback_query.register(
+        day_clicked,
+        SetSchedule.set_working_days,
+        ScheduleDateTimePicker.filter(
+            F.action.in_(
+                [
+                    ScheduleDayStatus.SELECTED,
+                    ScheduleDayStatus.NOT_SELECTED,
+                ]
+            )
+        ),
+    )
+    dp.callback_query.register(
+        alert_not_available_to_choose_day,
+        SetSchedule.set_working_days,
+        ScheduleDateTimePicker.filter(F.action == ScheduleDayStatus.NOT_AVAILABLE),
     )

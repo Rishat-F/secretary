@@ -4,6 +4,12 @@ from aiogram import types
 from aiogram.fsm.state import State
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.business_logic.resolve_days_statuses.utils import (
+    get_initial_days_statuses,
+    get_selected_days,
+    get_selected_days_view,
+    get_set_working_days_keyboard_buttons,
+)
 from src import messages
 from src.config import TIMEZONE
 from src.database import (
@@ -42,6 +48,7 @@ from src.keyboards import (
     back_main_keyboard,
     get_days_keyboard,
     get_services_to_update_keyboard,
+    get_set_working_days_keyboard,
     get_set_working_hours_keyboard,
     main_keyboard,
     set_service_new_field_keyboard,
@@ -700,10 +707,11 @@ def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker
 
 
 def schedule_logic() -> LogicResult:
-    times_statuses = get_initial_times_statuses()
-    times_statuses_view = get_times_statuses_view(times_statuses)
-    set_working_hours_keyboard_buttons = get_set_working_hours_keyboard_buttons(
-        times_statuses,
+    days_statuses = get_initial_days_statuses()
+    selected_days = get_selected_days(days_statuses)
+    days_statuses_view = get_selected_days_view(selected_days)
+    set_working_days_keyboard_buttons = get_set_working_days_keyboard_buttons(
+        days_statuses,
     )
     messages_to_answer = [
         MessageToAnswer(
@@ -711,10 +719,10 @@ def schedule_logic() -> LogicResult:
             types.ReplyKeyboardRemove(),
         ),
         MessageToAnswer(
-            messages.SET_WORKING_HOURS.format(times_statuses_view=times_statuses_view),
-            get_set_working_hours_keyboard(set_working_hours_keyboard_buttons),
+            messages.SET_WORKING_DAYS.format(days_statuses_view=days_statuses_view),
+            get_set_working_days_keyboard(set_working_days_keyboard_buttons),
         ),
     ]
-    state_to_set = SetSchedule.set_working_hours
-    data_to_set = {"times_statuses": times_statuses}
+    state_to_set = SetSchedule.set_working_days
+    data_to_set = {"days_statuses": days_statuses}
     return _get_logic_result(messages_to_answer, state_to_set, data_to_set)

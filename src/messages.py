@@ -77,4 +77,5 @@ COME = "Приходите:\n\n{appointment_view}"
 NEW_APPOINTMENT_CREATED = "Новая запись на прием!\n\n{appointment_view}"
 
 SCHEDULE_DEFINING = "Задание графика работы"
+SET_WORKING_DAYS = "Задайте рабочие числа\n\n{days_statuses_view}"
 SET_WORKING_HOURS = "Задайте рабочие часы\n\n{times_statuses_view}"

@@ -26,6 +26,12 @@ from src.business_logic.make_appointment.utils import (
     get_years_with_months,
     get_years_with_months_days,
 )
+from src.business_logic.resolve_days_statuses.resolve_days_statuses import resolve_days_statuses
+from src.business_logic.resolve_days_statuses.utils import (
+    get_selected_days,
+    get_selected_days_view,
+    get_set_working_days_keyboard_buttons,
+)
 from src.business_logic.resolve_times_statuses.resolve_times_statuses import resolve_times_statuses
 from src.business_logic.resolve_times_statuses.utils import (
     get_set_working_hours_keyboard_buttons,
@@ -64,6 +70,7 @@ from src.keyboards import (
     get_confirm_appointment_keyboard,
     get_days_keyboard,
     get_months_keyboard,
+    get_set_working_days_keyboard,
     get_set_working_hours_keyboard,
     get_times_keyboard,
     get_years_keyboard,
@@ -542,6 +549,14 @@ async def alert_not_available_to_choose(
     await callback.answer(alert_text, show_alert=True)
 
 
+async def alert_not_available_to_choose_day(
+    callback: types.CallbackQuery,
+    callback_data: ScheduleDateTimePicker,
+) -> None:
+    alert_text = "Недоступно для выбора"
+    await callback.answer(alert_text, show_alert=True)
+
+
 async def ignore_inline_button(callback: types.CallbackQuery) -> None:
     await callback.answer()
 
@@ -570,6 +585,27 @@ async def schedule(
         return None
     result = schedule_logic()
     await _process_logic_return(result, fsm_context=state, message=message)
+
+
+async def day_clicked(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    callback_data: ScheduleDateTimePicker,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    days_statuses = data["days_statuses"]
+    clicked_element = days_statuses[callback_data.index]
+    days_statuses = resolve_days_statuses(days_statuses, clicked_element)
+    selected_days = get_selected_days(days_statuses)
+    days_statuses_view = get_selected_days_view(selected_days)
+    set_working_days_keyboard_buttons = get_set_working_days_keyboard_buttons(days_statuses)
+    await callback.message.edit_text(
+        text=messages.SET_WORKING_DAYS.format(days_statuses_view=days_statuses_view),
+        reply_markup=get_set_working_days_keyboard(set_working_days_keyboard_buttons),
+    )
+    await callback.answer()
 
 
 async def time_clicked(
