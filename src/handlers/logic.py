@@ -26,11 +26,6 @@ from src.business_logic.make_appointment.utils import (
     get_days_keyboard_buttons,
     get_years_with_months_days,
 )
-from src.business_logic.resolve_times_statuses.utils import (
-    get_initial_times_statuses,
-    get_set_working_hours_keyboard_buttons,
-    get_times_statuses_view,
-)
 from src.keyboards import (
     BACK,
     CREATE,
@@ -49,7 +44,6 @@ from src.keyboards import (
     get_days_keyboard,
     get_services_to_update_keyboard,
     get_set_working_days_keyboard,
-    get_set_working_hours_keyboard,
     main_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,

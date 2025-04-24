@@ -1,5 +1,4 @@
 import re
-from typing import Sequence
 
 from src.keyboards import InlineButton
 
@@ -193,28 +192,28 @@ def _elements_in_right_place(days_statuses: list[str]) -> bool:
     for i in range(len(days_statuses)):
         element = days_statuses[i]
         if i == 0:
-            if not ScheduleDayGroup.ALL in element:
+            if ScheduleDayGroup.ALL not in element:
                 return False
         elif i == 1:
-            if not ScheduleDayGroup.MONDAY in element:
+            if ScheduleDayGroup.MONDAY not in element:
                 return False
         elif i == 2:
-            if not ScheduleDayGroup.TUESDAY in element:
+            if ScheduleDayGroup.TUESDAY not in element:
                 return False
         elif i == 3:
-            if not ScheduleDayGroup.WEDNESDAY in element:
+            if ScheduleDayGroup.WEDNESDAY not in element:
                 return False
         elif i == 4:
-            if not ScheduleDayGroup.THURSDAY in element:
+            if ScheduleDayGroup.THURSDAY not in element:
                 return False
         elif i == 5:
-            if not ScheduleDayGroup.FRIDAY in element:
+            if ScheduleDayGroup.FRIDAY not in element:
                 return False
         elif i == 6:
-            if not ScheduleDayGroup.SATURDAY in element:
+            if ScheduleDayGroup.SATURDAY not in element:
                 return False
         elif i == 7:
-            if not ScheduleDayGroup.SUNDAY in element:
+            if ScheduleDayGroup.SUNDAY not in element:
                 return False
         elif i % 8 == 0:
             if not is_week_element(element):
