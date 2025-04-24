@@ -526,3 +526,33 @@ def actualize_groups_selection_status(days_statuses: list[str]) -> list[str]:
                 actual_status = ScheduleDayStatus.SELECTED
             days_statuses[week_group_index] = f"{actual_status}{week}"
     return days_statuses
+
+
+def get_selected_days(days_statuses: list[str]) -> list[int]:
+    selected_days: list[int] = []
+    for element in days_statuses:
+        if _is_day_element(element):
+            status, day = split_element(element)
+            if status == ScheduleDayStatus.SELECTED:
+                selected_days.append(int(day))
+    return selected_days
+
+
+def get_selected_days_view(days: list[int]) -> str:
+    view = ""
+    prev_day = -1
+    for i in range(len(days)):
+        current_day = days[i]
+        try:
+            next_day = days[i+1]
+        except IndexError:
+            next_day = -1
+        if current_day - prev_day != 1:
+            view += f" {current_day}"
+        else:
+            if next_day - current_day != 1:
+                view += f"-{current_day}"
+        prev_day = current_day
+    view = view.strip()
+    view = view.replace(" ", ", ")
+    return view
