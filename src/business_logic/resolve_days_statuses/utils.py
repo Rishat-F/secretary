@@ -592,7 +592,7 @@ def get_set_working_days_keyboard_buttons(days_statuses: list[str]) -> list[Inli
         elif is_day_of_week_element(element):
             text = _days_of_week[group_or_day]
         elif is_week_element(element):
-            text = "→"
+            text = "➞"
         else:
             if status == ScheduleDayStatus.IGNORE:
                 text = " "
