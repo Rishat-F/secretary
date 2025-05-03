@@ -1,4 +1,6 @@
 import re
+from calendar import Calendar
+from datetime import date, datetime, timedelta
 
 from src.keyboards import InlineButton
 
@@ -30,17 +32,13 @@ class ScheduleDayGroup:
     SUNDAY = "sunday"
 
 
-def _get_days_statuses_possible_elements() -> list[str]:
-    MIN_MONTH_DAY = 1
-    MAX_MONTH_DAY = 31
-    possible_elements = [ScheduleDayStatus.IGNORE]
+def _get_groups_possible_elements() -> list[str]:
+    groups_possible_elements = []
     for status in [
         ScheduleDayStatus.NOT_AVAILABLE,
         ScheduleDayStatus.SELECTED,
         ScheduleDayStatus.NOT_SELECTED,
     ]:
-        for day in range(MIN_MONTH_DAY, MAX_MONTH_DAY + 1):
-            possible_elements.append(f"{status}{day}")
         for group in [
             ScheduleDayGroup.WEEK1,
             ScheduleDayGroup.WEEK2,
@@ -56,17 +54,29 @@ def _get_days_statuses_possible_elements() -> list[str]:
             ScheduleDayGroup.SATURDAY,
             ScheduleDayGroup.SUNDAY,
         ]:
-            possible_elements.append(f"{status}{group}")
-    possible_elements.append(f"{ScheduleDayStatus.SELECTED}{ScheduleDayGroup.ALL}")
-    possible_elements.append(f"{ScheduleDayStatus.NOT_SELECTED}{ScheduleDayGroup.ALL}")
-    return possible_elements
+            groups_possible_elements.append(f"{status}{group}")
+    groups_possible_elements.append(f"{ScheduleDayStatus.SELECTED}{ScheduleDayGroup.ALL}")
+    groups_possible_elements.append(f"{ScheduleDayStatus.NOT_SELECTED}{ScheduleDayGroup.ALL}")
+    return groups_possible_elements
 
 
-possible_elements = tuple(_get_days_statuses_possible_elements())
+groups_possible_elements = tuple(_get_groups_possible_elements())
+
+
+def _is_element_valid(element: str) -> bool:
+    day_element_pattern = (
+        rf"(?:{ScheduleDayStatus.NOT_AVAILABLE}|{ScheduleDayStatus.NOT_SELECTED}|{ScheduleDayStatus.SELECTED})"
+        r"\d\d\d\d-\d\d-\d\d"
+    )
+    return (
+        element in groups_possible_elements
+        or element == ScheduleDayStatus.IGNORE
+        or bool(re.fullmatch(day_element_pattern, element))
+    )
 
 
 def _is_day_element(element: str) -> bool:
-    pattern = r"_\d{1,2}$"
+    pattern = r"_\d\d\d\d-\d\d-\d\d$"
     return bool(re.search(pattern, element))
 
 
@@ -160,11 +170,13 @@ def _at_least_one_available_day_of_week(days_statuses) -> bool:
 
 
 def _uniform_ascending_days(days_elements: list[str]) -> bool:
-    days = [
-        int(element.rsplit(sep="_", maxsplit=1)[-1]) for element in days_elements
+    iso_dates = [
+        element.rsplit(sep="_", maxsplit=1)[-1] for element in days_elements
     ]
-    for i in range(1, len(days)):
-        if days[i] - days[i-1] != 1:
+    for i in range(1, len(iso_dates)):
+        prev_element = date.fromisoformat(iso_dates[i-1])
+        current_element = date.fromisoformat(iso_dates[i])
+        if current_element - prev_element != timedelta(days=1):
             return False
     return True
 
@@ -406,7 +418,7 @@ def check_days_statuses_assertions(days_statuses: list[str]) -> None:
     assert len(days_statuses) >= MIN_DAYS_STATUSES_LEN
     assert (len(days_statuses) % 8) == 0
     for element in days_statuses:
-        assert element in possible_elements
+        assert _is_element_valid(element)
     assert _at_least_one_available_day(days_statuses)
     assert _no_not_available_day_after_available(days_statuses)
     assert _at_least_one_available_week(days_statuses)
@@ -428,7 +440,7 @@ def check_clicked_element_assertions(clicked_element: str, days_statuses: list[s
 
     При наличии невозможного сценария вызывается AssertionError.
     """
-    assert clicked_element in possible_elements
+    assert _is_element_valid(clicked_element)
     clicked_element_status, _ = split_element(clicked_element)
     assert clicked_element_status not in [ScheduleDayStatus.NOT_AVAILABLE, ScheduleDayStatus.IGNORE]
     assert clicked_element in days_statuses
@@ -533,9 +545,10 @@ def get_selected_days(days_statuses: list[str]) -> list[int]:
     selected_days: list[int] = []
     for element in days_statuses:
         if _is_day_element(element):
-            status, day = split_element(element)
+            status, iso_date = split_element(element)
+            date_ = date.fromisoformat(iso_date)
             if status == ScheduleDayStatus.SELECTED:
-                selected_days.append(int(day))
+                selected_days.append(date_.day)
     return selected_days
 
 
@@ -559,15 +572,39 @@ def get_selected_days_view(days: list[int]) -> str:
     return view
 
 
-def get_initial_days_statuses() -> list[str]:
+def get_initial_days_statuses(tz_now: datetime) -> list[str]:
+    current_year = tz_now.year
+    current_month = tz_now.month
+    current_day = tz_now.day
     days_statuses = [
-        "not_selected_all", "not_selected_monday", "not_selected_tuesday", "not_selected_wednesday", "not_selected_thursday", "not_selected_friday", "not_selected_saturday", "not_selected_sunday",
-        "not_available_week1", "ignore", "ignore", "ignore", "ignore", "ignore", "not_available_1", "not_available_2",
-        "not_selected_week2", "not_available_3", "not_available_4", "not_selected_5", "not_selected_6", "not_selected_7", "not_selected_8", "not_selected_9",
-        "not_selected_week3", "not_selected_10", "not_selected_11", "not_selected_12", "not_selected_13", "not_selected_14", "not_selected_15", "not_selected_16",
-        "not_selected_week4", "not_selected_17", "not_selected_18", "not_selected_19", "not_selected_20", "not_selected_21", "not_selected_22", "not_selected_23",
-        "not_selected_week5", "not_selected_24", "not_selected_25", "not_selected_26", "not_selected_27", "not_selected_28", "ignore", "ignore",
+        "not_selected_all",
+        "not_selected_monday",
+        "not_selected_tuesday",
+        "not_selected_wednesday",
+        "not_selected_thursday",
+        "not_selected_friday",
+        "not_selected_saturday",
+        "not_selected_sunday",
     ]
+    calendar = Calendar()
+    week = 1
+    week_status = ScheduleDayStatus.NOT_AVAILABLE
+    for year, month, day, day_of_week_number in calendar.itermonthdays4(current_year, current_month):
+        if month != current_month:
+            element = ScheduleDayStatus.IGNORE
+        else:
+            iso_date = date(year, month, day).isoformat()
+            if day < current_day:
+                element = f"{ScheduleDayStatus.NOT_AVAILABLE}{iso_date}"
+            else:
+                element = f"{ScheduleDayStatus.NOT_SELECTED}{iso_date}"
+                week_status = ScheduleDayStatus.NOT_SELECTED
+        days_statuses.append(element)
+        if day_of_week_number % 7 == 6:
+            week_element = f"{week_status}week{week}"
+            days_statuses.insert(week*8, week_element)
+            week += 1
+            week_status = ScheduleDayStatus.NOT_AVAILABLE
     return days_statuses
 
 
@@ -586,11 +623,11 @@ def get_set_working_days_keyboard_buttons(days_statuses: list[str]) -> list[Inli
     result = []
     for i in range(len(days_statuses)):
         element = days_statuses[i]
-        status, group_or_day = split_element(element)
-        if group_or_day == ScheduleDayGroup.ALL:
+        status, group_or_iso_date = split_element(element)
+        if group_or_iso_date == ScheduleDayGroup.ALL:
             text = "↘️"
         elif is_day_of_week_element(element):
-            text = _days_of_week[group_or_day]
+            text = _days_of_week[group_or_iso_date]
         elif is_week_element(element):
             text = "➞"
         else:
@@ -599,7 +636,8 @@ def get_set_working_days_keyboard_buttons(days_statuses: list[str]) -> list[Inli
             elif status == ScheduleDayStatus.NOT_AVAILABLE:
                 text = "✖️"
             elif status == ScheduleDayStatus.NOT_SELECTED:
-                text = group_or_day
+                date_ = date.fromisoformat(group_or_iso_date)
+                text = str(date_.day)
             else:
                 text = "✔️"
         result.append(InlineButton(status, text, value=str(i)))
