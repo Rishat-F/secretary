@@ -525,7 +525,7 @@ def actualize_groups_selection_status(days_statuses: list[str]) -> list[str]:
 
     for week_group_index in range(8, len(days_statuses), 8):
         week_status, week = split_element(days_statuses[week_group_index])
-        if week_status != ScheduleDayStatus.NOT_AVAILABLE:
+        if week_status != ScheduleDayStatus.NOT_AVAILABLE:  # ToDo: отрефакторить функцию actualize_groups_selection_status (чтобы она работала и с ScheduleDayStatus.NOT_AVAILABLE)
             week_days_selectable_elements = []
             for element in days_statuses[week_group_index+1:week_group_index+8]:
                 status, _ = split_element(element)
@@ -572,10 +572,24 @@ def get_selected_days_view(days: list[int]) -> str:
     return view
 
 
-def get_initial_days_statuses(tz_now: datetime) -> list[str]:
+def get_days_statuses(
+    tz_now: datetime,
+    selected_dates: list[str],
+    chosen_year: int | None,
+    chosen_month: int | None,
+) -> list[str]:
     current_year = tz_now.year
     current_month = tz_now.month
     current_day = tz_now.day
+    if chosen_year is None:
+        assert chosen_month is None
+        assert not selected_dates
+        chosen_year = current_year
+        chosen_month = current_month
+    else:
+        assert chosen_month is not None
+    if chosen_year == current_year:
+        assert chosen_month >= current_month
     days_statuses = [
         "not_selected_all",
         "not_selected_monday",
@@ -588,23 +602,36 @@ def get_initial_days_statuses(tz_now: datetime) -> list[str]:
     ]
     calendar = Calendar()
     week = 1
-    week_status = ScheduleDayStatus.NOT_AVAILABLE
-    for year, month, day, day_of_week_number in calendar.itermonthdays4(current_year, current_month):
-        if month != current_month:
+    week_status = ScheduleDayStatus.NOT_AVAILABLE  # ToDo: отрефакторить функцию actualize_groups_selection_status (чтобы она работала и с ScheduleDayStatus.NOT_AVAILABLE)
+    for year, month, day, day_of_week_number in calendar.itermonthdays4(chosen_year, chosen_month):
+        if month != chosen_month:
             element = ScheduleDayStatus.IGNORE
         else:
             iso_date = date(year, month, day).isoformat()
-            if day < current_day:
-                element = f"{ScheduleDayStatus.NOT_AVAILABLE}{iso_date}"
+            if year == current_year and month == current_month:
+                if day < current_day:
+                    element = f"{ScheduleDayStatus.NOT_AVAILABLE}{iso_date}"
+                else:
+                    if iso_date in selected_dates:
+                        element = f"{ScheduleDayStatus.SELECTED}{iso_date}"
+                        week_status = ScheduleDayStatus.SELECTED
+                    else:
+                        element = f"{ScheduleDayStatus.NOT_SELECTED}{iso_date}"
+                        week_status = ScheduleDayStatus.NOT_SELECTED
             else:
-                element = f"{ScheduleDayStatus.NOT_SELECTED}{iso_date}"
-                week_status = ScheduleDayStatus.NOT_SELECTED
+                if iso_date in selected_dates:
+                    element = f"{ScheduleDayStatus.SELECTED}{iso_date}"
+                    week_status = ScheduleDayStatus.SELECTED
+                else:
+                    element = f"{ScheduleDayStatus.NOT_SELECTED}{iso_date}"
+                    week_status = ScheduleDayStatus.NOT_SELECTED
         days_statuses.append(element)
         if day_of_week_number % 7 == 6:
             week_element = f"{week_status}week{week}"
             days_statuses.insert(week*8, week_element)
             week += 1
             week_status = ScheduleDayStatus.NOT_AVAILABLE
+    days_statuses = actualize_groups_selection_status(days_statuses)
     return days_statuses
 
 
