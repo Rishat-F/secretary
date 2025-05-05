@@ -5,7 +5,7 @@ from aiogram.fsm.state import State
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.business_logic.resolve_days_statuses.utils import (
-    get_initial_days_statuses,
+    get_days_statuses,
     get_selected_days,
     get_selected_days_view,
     get_set_working_days_keyboard_buttons,
@@ -701,7 +701,9 @@ def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker
 
 
 def schedule_logic() -> LogicResult:
-    days_statuses = get_initial_days_statuses()
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    days_statuses = get_days_statuses(tz_now, [], None, None)
     selected_days = get_selected_days(days_statuses)
     days_statuses_view = get_selected_days_view(selected_days)
     set_working_days_keyboard_buttons = get_set_working_days_keyboard_buttons(
