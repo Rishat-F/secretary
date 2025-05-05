@@ -515,7 +515,9 @@ def actualize_groups_selection_status(days_statuses: list[str]) -> list[str]:
                 status, _ = split_element(element)
                 if status in [ScheduleDayStatus.NOT_SELECTED, ScheduleDayStatus.SELECTED]:
                     day_of_week_selectable_days_elements.append(element)
-        if all(
+        if not day_of_week_selectable_days_elements:
+            actual_status = ScheduleDayStatus.NOT_AVAILABLE
+        elif all(
             [ScheduleDayStatus.NOT_SELECTED in element for element in day_of_week_selectable_days_elements]
         ):
             actual_status = ScheduleDayStatus.NOT_SELECTED
@@ -524,20 +526,21 @@ def actualize_groups_selection_status(days_statuses: list[str]) -> list[str]:
         days_statuses[day_of_week_group_index] = f"{actual_status}{day_of_week}"
 
     for week_group_index in range(8, len(days_statuses), 8):
-        week_status, week = split_element(days_statuses[week_group_index])
-        if week_status != ScheduleDayStatus.NOT_AVAILABLE:  # ToDo: отрефакторить функцию actualize_groups_selection_status (чтобы она работала и с ScheduleDayStatus.NOT_AVAILABLE)
-            week_days_selectable_elements = []
-            for element in days_statuses[week_group_index+1:week_group_index+8]:
-                status, _ = split_element(element)
-                if status in [ScheduleDayStatus.NOT_SELECTED, ScheduleDayStatus.SELECTED]:
-                    week_days_selectable_elements.append(element)
-            if all(
-                [ScheduleDayStatus.NOT_SELECTED in element for element in week_days_selectable_elements]
-            ):
-                actual_status = ScheduleDayStatus.NOT_SELECTED
-            else:
-                actual_status = ScheduleDayStatus.SELECTED
-            days_statuses[week_group_index] = f"{actual_status}{week}"
+        _, week = split_element(days_statuses[week_group_index])
+        week_days_selectable_elements = []
+        for element in days_statuses[week_group_index+1:week_group_index+8]:
+            status, _ = split_element(element)
+            if status in [ScheduleDayStatus.NOT_SELECTED, ScheduleDayStatus.SELECTED]:
+                week_days_selectable_elements.append(element)
+        if not week_days_selectable_elements:
+            actual_status = ScheduleDayStatus.NOT_AVAILABLE
+        elif all(
+            [ScheduleDayStatus.NOT_SELECTED in element for element in week_days_selectable_elements]
+        ):
+            actual_status = ScheduleDayStatus.NOT_SELECTED
+        else:
+            actual_status = ScheduleDayStatus.SELECTED
+        days_statuses[week_group_index] = f"{actual_status}{week}"
     return days_statuses
 
 
@@ -602,7 +605,6 @@ def get_days_statuses(
     ]
     calendar = Calendar()
     week = 1
-    week_status = ScheduleDayStatus.NOT_AVAILABLE  # ToDo: отрефакторить функцию actualize_groups_selection_status (чтобы она работала и с ScheduleDayStatus.NOT_AVAILABLE)
     for year, month, day, day_of_week_number in calendar.itermonthdays4(chosen_year, chosen_month):
         if month != chosen_month:
             element = ScheduleDayStatus.IGNORE
@@ -614,24 +616,20 @@ def get_days_statuses(
                 else:
                     if iso_date in selected_dates:
                         element = f"{ScheduleDayStatus.SELECTED}{iso_date}"
-                        week_status = ScheduleDayStatus.SELECTED
                     else:
                         element = f"{ScheduleDayStatus.NOT_SELECTED}{iso_date}"
-                        week_status = ScheduleDayStatus.NOT_SELECTED
             else:
                 if iso_date in selected_dates:
                     element = f"{ScheduleDayStatus.SELECTED}{iso_date}"
-                    week_status = ScheduleDayStatus.SELECTED
                 else:
                     element = f"{ScheduleDayStatus.NOT_SELECTED}{iso_date}"
-                    week_status = ScheduleDayStatus.NOT_SELECTED
         days_statuses.append(element)
         if day_of_week_number % 7 == 6:
-            week_element = f"{week_status}week{week}"
+            week_element = f"{ScheduleDayStatus.NOT_AVAILABLE}week{week}"
             days_statuses.insert(week*8, week_element)
             week += 1
-            week_status = ScheduleDayStatus.NOT_AVAILABLE
     days_statuses = actualize_groups_selection_status(days_statuses)
+    check_days_statuses_assertions(days_statuses)
     return days_statuses
 
 
