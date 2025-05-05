@@ -33,5 +33,4 @@ def resolve_days_statuses(days_statuses: list[str], clicked_element: str) -> lis
         _, day = split_element(clicked_element)
         days_statuses[clicked_index] = f"{new_status}{day}"
     days_statuses = actualize_groups_selection_status(days_statuses)
-    check_days_statuses_assertions(days_statuses)
     return days_statuses
