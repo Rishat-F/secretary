@@ -541,6 +541,8 @@ def actualize_groups_selection_status(days_statuses: list[str]) -> list[str]:
         else:
             actual_status = ScheduleDayStatus.SELECTED
         days_statuses[week_group_index] = f"{actual_status}{week}"
+
+    check_days_statuses_assertions(days_statuses)
     return days_statuses
 
 
@@ -629,7 +631,6 @@ def get_days_statuses(
             days_statuses.insert(week*8, week_element)
             week += 1
     days_statuses = actualize_groups_selection_status(days_statuses)
-    check_days_statuses_assertions(days_statuses)
     return days_statuses
 
 
