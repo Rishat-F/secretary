@@ -3,6 +3,7 @@ from datetime import datetime
 import pytest
 
 from src.business_logic.resolve_days_statuses.utils import (
+    actualize_groups_selection_status,
     get_days_statuses,
     get_selected_days_view,
 )
@@ -125,3 +126,31 @@ def test_get_days_statuses(tz_now, selected_dates, chosen_year, chosen_month, ex
 )
 def test_get_selected_days_view(days, expected_result):
     assert get_selected_days_view(days) == expected_result
+
+
+@pytest.mark.parametrize(
+    "days_statuses,expected_result",
+    [
+        (
+            [
+                "not_selected_all", "not_selected_monday", "not_selected_tuesday", "not_selected_wednesday", "not_selected_thursday", "not_selected_friday", "not_selected_saturday", "not_selected_sunday",
+                "not_selected_week1", "ignore", "ignore", "ignore", "ignore", "ignore", "not_available_2025-02-01", "not_available_2025-02-02",
+                "not_selected_week2", "not_available_2025-02-03", "not_available_2025-02-04", "not_available_2025-02-05", "not_available_2025-02-06", "not_available_2025-02-07", "not_available_2025-02-08", "not_available_2025-02-09",
+                "not_selected_week3", "not_available_2025-02-10", "not_available_2025-02-11", "not_available_2025-02-12", "not_available_2025-02-13", "not_available_2025-02-14", "not_available_2025-02-15", "not_available_2025-02-16",
+                "not_selected_week4", "not_available_2025-02-17", "not_available_2025-02-18", "not_available_2025-02-19", "not_available_2025-02-20", "not_available_2025-02-21", "not_available_2025-02-22", "not_available_2025-02-23",
+                "not_selected_week5", "not_available_2025-02-24", "not_available_2025-02-25", "not_available_2025-02-26", "selected_2025-02-27", "not_selected_2025-02-28", "ignore", "ignore",
+            ],
+            [
+                "selected_all", "not_available_monday", "not_available_tuesday", "not_available_wednesday", "selected_thursday", "not_selected_friday", "not_available_saturday", "not_available_sunday",
+                "not_available_week1", "ignore", "ignore", "ignore", "ignore", "ignore", "not_available_2025-02-01", "not_available_2025-02-02",
+                "not_available_week2", "not_available_2025-02-03", "not_available_2025-02-04", "not_available_2025-02-05", "not_available_2025-02-06", "not_available_2025-02-07", "not_available_2025-02-08", "not_available_2025-02-09",
+                "not_available_week3", "not_available_2025-02-10", "not_available_2025-02-11", "not_available_2025-02-12", "not_available_2025-02-13", "not_available_2025-02-14", "not_available_2025-02-15", "not_available_2025-02-16",
+                "not_available_week4", "not_available_2025-02-17", "not_available_2025-02-18", "not_available_2025-02-19", "not_available_2025-02-20", "not_available_2025-02-21", "not_available_2025-02-22", "not_available_2025-02-23",
+                "selected_week5", "not_available_2025-02-24", "not_available_2025-02-25", "not_available_2025-02-26", "selected_2025-02-27", "not_selected_2025-02-28", "ignore", "ignore",
+            ],
+        ),
+    ],
+)
+def test_actualize_groups_selection_status(days_statuses, expected_result):
+    result = actualize_groups_selection_status(days_statuses)
+    assert result == expected_result
