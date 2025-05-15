@@ -34,7 +34,6 @@ class ScheduleStates(StatesGroup):
     """Конечный автомат состояний управления графиком работы."""
 
     view_schedule = State()
-    choose_edit_schedule_action = State()
     confirm_schedule_clear = State()
     choose_year = State()
     choose_month = State()

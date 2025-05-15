@@ -77,10 +77,7 @@ COME = "Приходите:\n\n{appointment_view}"
 NEW_APPOINTMENT_CREATED = "Новая запись на прием!\n\n{appointment_view}"
 
 NO_SCHEDULE = "График работы не задан"
-HOW_TO_EDIT_SCHEDULE = (
-    'Для изменения графика работы нажмите кнопку <b>"{modify_button}"</b>.\n'
-    'Для обнуления графика работы нажмите кнопку <b>"{clear_button}"</b>'
-)
+SCHEDULE_VIEW = "Просмотр графика работы"
 SELECT_WORKING_DATES = "Выберите рабочие даты"
 SELECT_WORKING_HOURS = "Выберите рабочие часы"
 HOW_TO_MODIFY_SCHEDULE = (
