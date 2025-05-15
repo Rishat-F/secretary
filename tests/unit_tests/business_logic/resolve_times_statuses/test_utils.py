@@ -12,6 +12,7 @@ from src.business_logic.resolve_times_statuses.utils import (
     check_times_statuses_assertions,
     get_initial_times_statuses,
     get_selected_times,
+    get_slots_to_delete,
     get_slots_to_save,
     get_times_statuses_view,
 )
@@ -571,4 +572,24 @@ def test_get_times_statuses_view(times_statuses, expected_result):
 )
 def test_get_slots_to_save(iso_dates, iso_times, expected_result):
     result = get_slots_to_save(iso_dates, iso_times)
+    assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "iso_dates,iso_times,expected_result",
+    [
+        (
+            ["2025-02-15", "2025-02-22", "2026-04-10"],
+            ["00:30", "10:00", "10:30", "16:30"],
+            [
+                "2025-02-14T21:30:00", "2025-02-15T07:00:00", "2025-02-15T07:30:00",
+                "2025-02-15T13:30:00", "2025-02-21T21:30:00", "2025-02-22T07:00:00",
+                "2025-02-22T07:30:00", "2025-02-22T13:30:00", "2026-04-09T21:30:00",
+                "2026-04-10T07:00:00", "2026-04-10T07:30:00", "2026-04-10T13:30:00",
+            ],
+        ),
+    ],
+)
+def test_get_slots_to_delete(iso_dates, iso_times, expected_result):
+    result = get_slots_to_delete(iso_dates, iso_times)
     assert result == expected_result
