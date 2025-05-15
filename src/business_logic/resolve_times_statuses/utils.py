@@ -1,6 +1,7 @@
 from datetime import date, datetime, time
 
 from src import messages
+from src.config import TIMEZONE
 from src.constraints import DURATION_MULTIPLIER
 from src.keyboards import InlineButton
 from src.utils import to_utc
@@ -182,7 +183,7 @@ def get_slots_to_save(iso_tz_dates: list[str], iso_tz_times: list[str]) -> dict[
         for iso_time in iso_tz_times:
             tz_date = date.fromisoformat(iso_tz_date)
             tz_time = time.fromisoformat(iso_time)
-            slot_tz_dt = datetime(tz_date.year, tz_date.month, tz_date.day, tz_time.hour, tz_time.minute)
+            slot_tz_dt = TIMEZONE.localize(datetime(tz_date.year, tz_date.month, tz_date.day, tz_time.hour, tz_time.minute))
             slot_utc_dt = to_utc(slot_tz_dt)
             utc_slots.append(slot_utc_dt)
     dates_slots = {}
@@ -204,7 +205,7 @@ def get_slots_to_delete(iso_tz_dates: list[str], iso_tz_times: list[str]) -> lis
         for iso_tz_time in iso_tz_times:
             tz_date = date.fromisoformat(iso_tz_date)
             tz_time = time.fromisoformat(iso_tz_time)
-            slot_tz_dt = datetime(tz_date.year, tz_date.month, tz_date.day, tz_time.hour, tz_time.minute)
+            slot_tz_dt = TIMEZONE.localize(datetime(tz_date.year, tz_date.month, tz_date.day, tz_time.hour, tz_time.minute))
             slot_utc_dt = to_utc(slot_tz_dt)
             iso_utc_datetime = slot_utc_dt.replace(tzinfo=None).isoformat()
             slots.append(iso_utc_datetime)
