@@ -5,7 +5,7 @@ import pytest
 from src.business_logic.resolve_days_statuses.utils import (
     actualize_groups_selection_status,
     get_days_statuses,
-    get_selected_days_view,
+    _get_month_selected_days_view,
 )
 
 
@@ -124,8 +124,8 @@ def test_get_days_statuses(tz_now, selected_dates, chosen_year, chosen_month, ex
         ([1, 3, 5, 6, 9, 10, 11, 12, 22, 23, 24], "1, 3, 5-6, 9-12, 22-24"),
     ]
 )
-def test_get_selected_days_view(days, expected_result):
-    assert get_selected_days_view(days) == expected_result
+def test__get_month_selected_days_view(days, expected_result):
+    assert _get_month_selected_days_view(days) == expected_result
 
 
 @pytest.mark.parametrize(

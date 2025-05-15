@@ -4,12 +4,6 @@ from aiogram import types
 from aiogram.fsm.state import State
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.business_logic.resolve_days_statuses.utils import (
-    get_days_statuses,
-    get_selected_days,
-    get_selected_days_view,
-    get_set_working_days_keyboard_buttons,
-)
 from src import messages
 from src.config import TIMEZONE
 from src.database import (
@@ -23,8 +17,8 @@ from src.database import (
 from src.exceptions import ServiceNameTooLongError
 from src.business_logic.make_appointment.get_times_possible_for_appointment import get_times_possible_for_appointment
 from src.business_logic.make_appointment.utils import (
-    get_days_keyboard_buttons,
     get_years_with_months_days,
+    make_appointment_get_days_keyboard_buttons,
 )
 from src.keyboards import (
     BACK,
@@ -34,17 +28,17 @@ from src.keyboards import (
     MAIN_MENU,
     NAME,
     PRICE,
-    SHOW_ACTIVE_ZAPISI,
     SHOW_ALL_USLUGI,
+    SHOW_ACTIVE_ZAPISI,
     UPDATE,
     UPDATE_ANOTHER_USLUGA,
     ZAPIS_NA_PRIEM,
     AppointmentDateTimePicker,
     back_main_keyboard,
-    get_days_keyboard,
     get_services_to_update_keyboard,
-    get_set_working_days_keyboard,
+    get_view_schedule_keyboard,
     main_keyboard,
+    make_appointment_get_days_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,
     services_keyboard,
@@ -52,7 +46,7 @@ from src.keyboards import (
 )
 from src.models import Service
 from src.secrets import ADMIN_TG_ID
-from src.states import ServicesActions, MakeAppointment, SetSchedule
+from src.states import ServicesActions, MakeAppointment, ScheduleStates
 from src.utils import (
     date_to_lang,
     form_service_view,
@@ -661,7 +655,7 @@ async def choose_service_for_appointment_logic(
                 years_with_months_days = get_years_with_months_days(times_dict)
                 chosen_year = min(years_with_months_days.keys())
                 chosen_month = min(years_with_months_days[chosen_year].keys())
-                days_to_choose = get_days_keyboard_buttons(
+                days_to_choose = make_appointment_get_days_keyboard_buttons(
                     years_with_months_days,
                     tz_now,
                     chosen_year,
@@ -674,7 +668,7 @@ async def choose_service_for_appointment_logic(
                     ),
                     MessageToAnswer(
                         messages.CHOOSE_DATE,
-                        get_days_keyboard(chosen_year, chosen_month, days_to_choose),
+                        make_appointment_get_days_keyboard(chosen_year, chosen_month, days_to_choose),
                     ),
                 ]
                 state_to_set = MakeAppointment.choose_day
@@ -701,24 +695,15 @@ def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker
 
 
 def schedule_logic() -> LogicResult:
-    utc_now = get_utc_now()
-    tz_now = from_utc(utc_now, TIMEZONE)
-    days_statuses = get_days_statuses(tz_now, [], None, None)
-    selected_days = get_selected_days(days_statuses)
-    days_statuses_view = get_selected_days_view(selected_days)
-    set_working_days_keyboard_buttons = get_set_working_days_keyboard_buttons(
-        days_statuses,
-    )
     messages_to_answer = [
         MessageToAnswer(
-            messages.SCHEDULE_DEFINING,
+            messages.NO_SCHEDULE,
             types.ReplyKeyboardRemove(),
         ),
         MessageToAnswer(
-            messages.SET_WORKING_DAYS.format(days_statuses_view=days_statuses_view),
-            get_set_working_days_keyboard(set_working_days_keyboard_buttons),
+            messages.CHOOSE_ACTION,
+            get_view_schedule_keyboard(),
         ),
     ]
-    state_to_set = SetSchedule.set_working_days
-    data_to_set = {"days_statuses": days_statuses}
-    return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
+    state_to_set = ScheduleStates.view_schedule
+    return _get_logic_result(messages_to_answer, state_to_set)
