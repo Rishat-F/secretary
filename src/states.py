@@ -28,3 +28,15 @@ class MakeAppointment(StatesGroup):
     choose_day = State()
     choose_time = State()
     confirm = State()
+
+
+class ScheduleStates(StatesGroup):
+    """Конечный автомат состояний управления графиком работы."""
+
+    view_schedule = State()
+    choose_edit_schedule_action = State()
+    confirm_schedule_clear = State()
+    choose_year = State()
+    choose_month = State()
+    set_working_days = State()
+    set_working_hours = State()

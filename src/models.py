@@ -144,7 +144,7 @@ class Reservation(Base):
     )
 
     datetime_: Mapped[datetime] = mapped_column(
-        ForeignKey("slot.datetime_", ondelete="CASCADE"),
+        ForeignKey("slot.datetime_", ondelete="RESTRICT"),
         primary_key=True,
         nullable=False,
         comment="Дата и время слота (UTC)",

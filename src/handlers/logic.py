@@ -15,7 +15,11 @@ from src.database import (
     update_service,
 )
 from src.exceptions import ServiceNameTooLongError
-from src.handlers.business_logic import get_times_possible_for_appointment
+from src.business_logic.make_appointment.get_times_possible_for_appointment import get_times_possible_for_appointment
+from src.business_logic.make_appointment.utils import (
+    get_years_with_months_days,
+    make_appointment_get_days_keyboard_buttons,
+)
 from src.keyboards import (
     BACK,
     CREATE,
@@ -24,16 +28,17 @@ from src.keyboards import (
     MAIN_MENU,
     NAME,
     PRICE,
-    SHOW_ACTIVE_ZAPISI,
     SHOW_ALL_USLUGI,
+    SHOW_ACTIVE_ZAPISI,
     UPDATE,
     UPDATE_ANOTHER_USLUGA,
     ZAPIS_NA_PRIEM,
-    DateTimePicker,
+    AppointmentDateTimePicker,
     back_main_keyboard,
-    get_days_keyboard,
     get_services_to_update_keyboard,
+    get_view_schedule_keyboard,
     main_keyboard,
+    make_appointment_get_days_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,
     services_keyboard,
@@ -41,16 +46,14 @@ from src.keyboards import (
 )
 from src.models import Service
 from src.secrets import ADMIN_TG_ID
-from src.states import ServicesActions, MakeAppointment
+from src.states import ServicesActions, MakeAppointment, ScheduleStates
 from src.utils import (
     date_to_lang,
     form_service_view,
     form_services_list_text,
     form_appointments_list_text,
     from_utc,
-    get_days_keyboard_buttons,
     get_utc_now,
-    get_years_with_months_days,
     preprocess_text,
     validate_service_duration,
     validate_service_name,
@@ -652,7 +655,7 @@ async def choose_service_for_appointment_logic(
                 years_with_months_days = get_years_with_months_days(times_dict)
                 chosen_year = min(years_with_months_days.keys())
                 chosen_month = min(years_with_months_days[chosen_year].keys())
-                days_to_choose = get_days_keyboard_buttons(
+                days_to_choose = make_appointment_get_days_keyboard_buttons(
                     years_with_months_days,
                     tz_now,
                     chosen_year,
@@ -660,12 +663,12 @@ async def choose_service_for_appointment_logic(
                 )
                 messages_to_answer = [
                     MessageToAnswer(
-                        f'Запись на услугу <b>"{service_name_for_appointment}"</b>',
+                        messages.MAKING_APPOINTMENT.format(service_name=service_name_for_appointment),
                         types.ReplyKeyboardRemove(),
                     ),
                     MessageToAnswer(
-                        "Выберите дату",
-                        get_days_keyboard(chosen_year, chosen_month, days_to_choose),
+                        messages.CHOOSE_DATE,
+                        make_appointment_get_days_keyboard(chosen_year, chosen_month, days_to_choose),
                     ),
                 ]
                 state_to_set = MakeAppointment.choose_day
@@ -676,7 +679,7 @@ async def choose_service_for_appointment_logic(
                 return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
 
 
-def alert_not_available_to_choose_logic(callback_data: DateTimePicker) -> str:
+def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker) -> str:
     alert_text = ""
     year = callback_data.year
     month = callback_data.month
@@ -689,3 +692,18 @@ def alert_not_available_to_choose_logic(callback_data: DateTimePicker) -> str:
     else:
         alert_text = messages.YEAR_NOT_AVAILABLE.format(lang_year=lang_date)
     return alert_text
+
+
+def schedule_logic() -> LogicResult:
+    messages_to_answer = [
+        MessageToAnswer(
+            messages.NO_SCHEDULE,
+            types.ReplyKeyboardRemove(),
+        ),
+        MessageToAnswer(
+            messages.CHOOSE_ACTION,
+            get_view_schedule_keyboard(),
+        ),
+    ]
+    state_to_set = ScheduleStates.view_schedule
+    return _get_logic_result(messages_to_answer, state_to_set)

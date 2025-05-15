@@ -1,12 +1,13 @@
 """Клавиатуры бота."""
 
 from datetime import datetime
+from typing import NamedTuple
 
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from src.utils import InlineButton
+from src.utils import months
 
 BACK = "Назад"
 MAIN_MENU = "Главная"
@@ -25,14 +26,30 @@ SHOW_ACTIVE_ZAPISI = "Ваши записи"
 CANCEL = "Отмена"
 YES = "Да"
 NO = "Нет"
+SCHEDULE = "График работы"
+EDIT = "Редактировать"
+CLEAR = "Обнулить"
+MODIFY = "Изменить"
+SAVE = "Сохранить"
+DELETE = "Удалить"
+SET_TIME = "Задать время"
+SET_DATE = "Задать даты"
+VIEW = "Просмотр"
 
 back_button = KeyboardButton(text=BACK)
 main_menu_button = KeyboardButton(text=MAIN_MENU)
 
 
+class InlineButton(NamedTuple):
+    action: str
+    text: str
+    value: str
+
+
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
+        [KeyboardButton(text=SCHEDULE)],
     ],
     resize_keyboard=True,
 )
@@ -117,44 +134,51 @@ appointments_keyboard = ReplyKeyboardMarkup(
 )
 
 
-class DateTimePicker(CallbackData, prefix="pick_datetime", sep="$"):
-    action: str 
+class AppointmentDateTimePicker(CallbackData, prefix="appointment_pick_datetime", sep="$"):
+    action: str
     year: int | None = None
     month: int | None = None
     day: int | None = None
     time: str | None = None
 
 
-def get_years_keyboard(years_keyboard_buttons: list[InlineButton]) -> InlineKeyboardMarkup:
+class Schedule(CallbackData, prefix="schedule", sep="$"):
+    action: str
+    year: int | None = None
+    month: int | None = None
+    index: int | None = None
+
+
+def make_appointment_get_years_keyboard(years_keyboard_buttons: list[InlineButton]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for button in years_keyboard_buttons:
         builder.button(
             text=button.text,
-            callback_data=DateTimePicker(action=button.action, year=int(button.value)),
+            callback_data=AppointmentDateTimePicker(action=button.action, year=int(button.value)),
         )
     builder.adjust(3)
     footer_builder = InlineKeyboardBuilder()
     footer_builder.button(
         text=CANCEL,
-        callback_data=DateTimePicker(action="cancel"),
+        callback_data=AppointmentDateTimePicker(action="cancel"),
     )
     builder.attach(footer_builder)
     return builder.as_markup()
 
 
-def get_months_keyboard(
+def make_appointment_get_months_keyboard(
     chosen_year: int,
     months_keyboard_buttons: list[InlineButton],
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(
         text=str(chosen_year),
-        callback_data=DateTimePicker(action="choose_year"),
+        callback_data=AppointmentDateTimePicker(action="choose_year"),
     )
     for button in months_keyboard_buttons:
         builder.button(
             text=button.text,
-            callback_data=DateTimePicker(
+            callback_data=AppointmentDateTimePicker(
                 action=button.action,
                 year=chosen_year,
                 month=int(button.value),
@@ -162,13 +186,13 @@ def get_months_keyboard(
         )
     builder.button(
         text=CANCEL,
-        callback_data=DateTimePicker(action="cancel"),
+        callback_data=AppointmentDateTimePicker(action="cancel"),
     )
     builder.adjust(1, 4, 4, 4, 1)
     return builder.as_markup()
 
 
-def get_days_keyboard(
+def make_appointment_get_days_keyboard(
     chosen_year: int,
     chosen_month: int,
     days_keyboard_buttons: list[InlineButton],
@@ -177,7 +201,7 @@ def get_days_keyboard(
     for button in days_keyboard_buttons:
         builder.button(
             text=button.text,
-            callback_data=DateTimePicker(
+            callback_data=AppointmentDateTimePicker(
                 action=button.action,
                 year=chosen_year,
                 month=chosen_month,
@@ -186,13 +210,13 @@ def get_days_keyboard(
         )
     builder.button(
         text=CANCEL,
-        callback_data=DateTimePicker(action="cancel"),
+        callback_data=AppointmentDateTimePicker(action="cancel"),
     )
     builder.adjust(2, 7, 7, 7, 7, 7, 7, 7, 7, 1)
     return builder.as_markup()
 
 
-def get_times_keyboard(
+def make_appointment_get_times_keyboard(
     chosen_year: int,
     chosen_month: int,
     chosen_day: int,
@@ -206,7 +230,7 @@ def get_times_keyboard(
             time = None
         builder.button(
             text=button.text,
-            callback_data=DateTimePicker(
+            callback_data=AppointmentDateTimePicker(
                 action=button.action,
                 year=chosen_year,
                 month=chosen_month,
@@ -218,7 +242,7 @@ def get_times_keyboard(
     footer_builder = InlineKeyboardBuilder()
     footer_builder.button(
         text=CANCEL,
-        callback_data=DateTimePicker(action="cancel"),
+        callback_data=AppointmentDateTimePicker(action="cancel"),
     )
     builder.attach(footer_builder)
     return builder.as_markup()
@@ -228,7 +252,7 @@ def get_confirm_appointment_keyboard(chosen_datetime: datetime) -> InlineKeyboar
     builder = InlineKeyboardBuilder()
     builder.button(
         text=YES,
-        callback_data=DateTimePicker(
+        callback_data=AppointmentDateTimePicker(
             action="confirmed",
             year=chosen_datetime.year,
             month=chosen_datetime.month,
@@ -237,13 +261,219 @@ def get_confirm_appointment_keyboard(chosen_datetime: datetime) -> InlineKeyboar
         ),
     )
     builder.button(
-        text=NO, callback_data=DateTimePicker(
+        text=NO, callback_data=AppointmentDateTimePicker(
             action="choose_time",
             year=chosen_datetime.year,
             month=chosen_datetime.month,
             day=chosen_datetime.day,
         ),
     )
-    builder.button(text=CANCEL, callback_data=DateTimePicker(action="cancel"))
+    builder.button(text=CANCEL, callback_data=AppointmentDateTimePicker(action="cancel"))
     builder.adjust(1, 1, 1)
+    return builder.as_markup()
+
+
+def get_view_schedule_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=EDIT,
+        callback_data=Schedule(action="edit_schedule"),
+    )
+    builder.button(
+        text=MAIN_MENU,
+        callback_data=Schedule(action="main_menu"),
+    )
+    builder.adjust(1, 1)
+    return builder.as_markup()
+
+
+def get_edit_schedule_menu_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=MODIFY,
+        callback_data=Schedule(action="modify_schedule"),
+    )
+    builder.button(
+        text=CLEAR,
+        callback_data=Schedule(action="clear_schedule"),
+    )
+    builder.button(
+        text=BACK,
+        callback_data=Schedule(action="view_schedule"),
+    )
+    builder.button(
+        text=MAIN_MENU,
+        callback_data=Schedule(action="main_menu"),
+    )
+    builder.adjust(1, 1, 2)
+    return builder.as_markup()
+
+
+def set_schedule_get_years_keyboard(years_keyboard_buttons: list[InlineButton]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for button in years_keyboard_buttons:
+        builder.button(
+            text=button.text,
+            callback_data=Schedule(action=button.action, year=int(button.value)),
+        )
+    builder.button(
+        text=SET_TIME,
+        callback_data=Schedule(action="set_time"),
+    )
+    builder.button(
+        text=SAVE,
+        callback_data=Schedule(action="save"),
+    )
+    builder.button(
+        text=DELETE,
+        callback_data=Schedule(action="delete"),
+    )
+    builder.button(
+        text=VIEW,
+        callback_data=Schedule(action="view_schedule"),
+    )
+    builder.button(
+        text=MAIN_MENU,
+        callback_data=Schedule(action="main_menu"),
+    )
+    builder.adjust(2, 1, 2, 2)
+    return builder.as_markup()
+
+
+def set_schedule_get_months_keyboard(
+    chosen_year: int,
+    months_keyboard_buttons: list[InlineButton],
+) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=str(chosen_year),
+        callback_data=Schedule(action="choose_year"),
+    )
+    for button in months_keyboard_buttons:
+        builder.button(
+            text=button.text,
+            callback_data=Schedule(
+                action=button.action,
+                year=chosen_year,
+                month=int(button.value),
+            ),
+        )
+    builder.button(
+        text=SET_TIME,
+        callback_data=Schedule(action="set_time"),
+    )
+    builder.button(
+        text=SAVE,
+        callback_data=Schedule(action="save"),
+    )
+    builder.button(
+        text=DELETE,
+        callback_data=Schedule(action="delete"),
+    )
+    builder.button(
+        text=VIEW,
+        callback_data=Schedule(action="view_schedule"),
+    )
+    builder.button(
+        text=MAIN_MENU,
+        callback_data=Schedule(action="main_menu"),
+    )
+    builder.adjust(1, 4, 4, 4, 1, 2, 2)
+    return builder.as_markup()
+
+
+def set_schedule_get_days_keyboard(
+    chosen_year: int,
+    chosen_month: int,
+    days_keyboard_buttons: list[InlineButton],
+) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=months[chosen_month],
+        callback_data=Schedule(action="choose_month", year=chosen_year),
+    )
+    builder.button(
+        text=str(chosen_year),
+        callback_data=Schedule(action="choose_year"),
+    )
+    for button in days_keyboard_buttons:
+        builder.button(
+            text=button.text,
+            callback_data=Schedule(
+                action=button.action,
+                year=chosen_year,
+                month=chosen_month,
+                index=int(button.value),
+            ),
+        )
+    builder.adjust(2, 8, 8, 8, 8, 8, 8)
+    footer_builder = InlineKeyboardBuilder()
+    footer_builder.button(
+        text=SET_TIME,
+        callback_data=Schedule(action="set_time"),
+    )
+    footer_builder.button(
+        text=SAVE,
+        callback_data=Schedule(action="save"),
+    )
+    footer_builder.button(
+        text=DELETE,
+        callback_data=Schedule(action="delete"),
+    )
+    footer_builder.button(
+        text=VIEW,
+        callback_data=Schedule(action="view_schedule"),
+    )
+    footer_builder.button(
+        text=MAIN_MENU,
+        callback_data=Schedule(action="main_menu"),
+    )
+    footer_builder.adjust(1, 2, 2)
+    builder.attach(footer_builder)
+    return builder.as_markup()
+
+
+def set_schedule_get_times_keyboard(
+    times_keyboard_buttons: list[InlineButton],
+) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for button in times_keyboard_buttons:
+        builder.button(
+            text=button.text,
+            callback_data=Schedule(
+                action=button.action,
+                index=int(button.value),
+            ),
+        )
+    builder.adjust(6)
+    footer_builder = InlineKeyboardBuilder()
+    footer_builder.button(
+        text=SET_DATE,
+        callback_data=Schedule(action="choose_day"),
+    )
+    footer_builder.button(
+        text=SAVE,
+        callback_data=Schedule(action="save"),
+    )
+    footer_builder.button(
+        text=DELETE,
+        callback_data=Schedule(action="delete"),
+    )
+    footer_builder.button(
+        text=VIEW,
+        callback_data=Schedule(action="view_schedule"),
+    )
+    footer_builder.button(
+        text=MAIN_MENU,
+        callback_data=Schedule(action="main_menu"),
+    )
+    footer_builder.adjust(1, 2, 2)
+    builder.attach(footer_builder)
+    return builder.as_markup()
+
+
+def get_confirm_clear_schedule_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=YES, callback_data=Schedule(action="clear_schedule_confirmed"))
+    builder.button(text=NO, callback_data=Schedule(action="edit_schedule"))
     return builder.as_markup()
