@@ -129,6 +129,20 @@ async def get_available_slots(
     return list(slots)
 
 
+async def get_future_slots(
+    session: AsyncSession,
+    current_utc_datetime: datetime,
+) -> list[Slot]:
+    query = (
+        select(Slot)
+        .where(Slot.datetime_ > current_utc_datetime)
+        .order_by(Slot.datetime_)
+    )
+    result = await session.execute(query)
+    slots = result.scalars().all()
+    return list(slots)
+
+
 async def insert_reservations(
     session: AsyncSession,
     datetimes_to_reserve: list[datetime],

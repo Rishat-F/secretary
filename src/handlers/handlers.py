@@ -44,6 +44,13 @@ from src.business_logic.resolve_times_statuses.utils import (
     get_times_statuses_view,
     set_schedule_get_times_keyboard_buttons,
 )
+from src.business_logic.schedule.get_schedule import get_schedule
+from src.business_logic.schedule.utils import (
+    view_schedule_get_days_keyboard_buttons,
+    view_schedule_get_months_keyboard_buttons,
+    view_schedule_get_times_keyboard_buttons,
+    view_schedule_get_years_keyboard_buttons,
+)
 from src.models import Appointment, Slot
 from src.handlers.logic import (
     LogicResult,
@@ -69,22 +76,19 @@ from src.database import (
     delete_not_booked_future_slots,
     delete_slots,
     get_available_slots,
+    get_future_slots,
     get_services,
     get_slots_by_date,
     insert_appointment,
     insert_reservations,
 )
 from src.keyboards import (
-    CLEAR,
     DELETE,
-    MODIFY,
     SAVE,
     Schedule,
     appointments_keyboard,
     get_confirm_appointment_keyboard,
     get_confirm_clear_schedule_keyboard,
-    get_edit_schedule_menu_keyboard,
-    get_view_schedule_keyboard,
     main_keyboard,
     AppointmentDateTimePicker,
     make_appointment_get_days_keyboard,
@@ -95,6 +99,10 @@ from src.keyboards import (
     set_schedule_get_months_keyboard,
     set_schedule_get_times_keyboard,
     set_schedule_get_years_keyboard,
+    view_schedule_get_days_keyboard,
+    view_schedule_get_months_keyboard,
+    view_schedule_get_times_keyboard,
+    view_schedule_get_years_keyboard,
 )
 from src.secrets import ADMIN_TG_ID
 from src.states import MakeAppointment, ScheduleStates
@@ -619,11 +627,13 @@ async def cancel_choose_date_for_appointment(
 
 async def schedule(
     message: types.Message,
+    async_session: async_sessionmaker[AsyncSession],
     state: FSMContext,
 ) -> None:
     if message.from_user is None:
         return None
-    result = schedule_logic()
+    async with async_session() as session:
+        result = await schedule_logic(session)
     await _process_logic_return(result, fsm_context=state, message=message)
 
 
@@ -639,22 +649,6 @@ async def go_to_main_menu_from_schedule(
         reply_markup=main_keyboard,
     )
     await state.clear()
-    await callback.answer()
-
-
-async def go_to_edit_schedule_menu(
-    callback: types.CallbackQuery,
-    state: FSMContext,
-) -> None:
-    if not callback.message:
-        return None
-    await state.set_state(ScheduleStates.choose_edit_schedule_action)
-    await state.set_data({})
-    await callback.message.delete()
-    await callback.message.answer(
-        text=messages.HOW_TO_EDIT_SCHEDULE.format(clear_button=CLEAR, modify_button=MODIFY),
-        reply_markup=get_edit_schedule_menu_keyboard(),
-    )
     await callback.answer()
 
 
@@ -985,6 +979,7 @@ async def clear_schedule_clicked(
 
 async def clear_schedule_confirmed(
     callback: types.CallbackQuery,
+    callback_data: Schedule,
     state: FSMContext,
     async_session: async_sessionmaker[AsyncSession],
 ) -> None:
@@ -994,28 +989,124 @@ async def clear_schedule_confirmed(
     async with async_session() as session:
         await delete_not_booked_future_slots(session, utc_now)
         await session.commit()
-    await state.set_state(ScheduleStates.choose_edit_schedule_action)
-    await state.set_data({})
     await callback.message.answer(messages.SCHEDULE_CLEARED)
-    await callback.message.answer(
-        text=messages.HOW_TO_EDIT_SCHEDULE.format(clear_button=CLEAR, modify_button=MODIFY),
-        reply_markup=get_edit_schedule_menu_keyboard(),
-    )
     await callback.answer(messages.SCHEDULE_CLEARED, show_alert=True)
-    await callback.message.delete()
+    await go_to_choose_day_while_view_schedule(callback, callback_data, state, async_session)
 
 
-async def go_to_view_schedule(
+async def go_to_choose_year_while_view_schedule(
     callback: types.CallbackQuery,
     state: FSMContext,
 ) -> None:
     if not callback.message:
         return None
-    await state.clear()
+    data = await state.get_data()
+    schedule_dict = data["schedule_dict"]
+    years = list(schedule_dict.keys())
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    years_keyboard_buttons = view_schedule_get_years_keyboard_buttons(years, tz_now)
+    await callback.message.edit_text(
+        text=messages.SCHEDULE_VIEW,
+        reply_markup=view_schedule_get_years_keyboard(years_keyboard_buttons),
+    )
+    await callback.answer()
+
+
+async def go_to_choose_month_while_view_schedule(
+    callback: types.CallbackQuery,
+    callback_data: Schedule,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    schedule_dict = data["schedule_dict"]
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    chosen_year = callback_data.year
+    years_with_months = get_years_with_months(schedule_dict)
+    months_keyboard_buttons = view_schedule_get_months_keyboard_buttons(
+        years_with_months,
+        tz_now,
+        chosen_year,
+    )
+    await callback.message.edit_text(
+        text=messages.SCHEDULE_VIEW,
+        reply_markup=view_schedule_get_months_keyboard(chosen_year, months_keyboard_buttons),
+    )
+    await callback.answer()
+
+
+async def go_to_choose_day_while_view_schedule(
+    callback: types.CallbackQuery,
+    callback_data: Schedule,
+    state: FSMContext,
+    async_session: async_sessionmaker[AsyncSession],
+) -> None:
+    if not callback.message:
+        return None
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    async with async_session() as session:
+        slots = await get_future_slots(session, utc_now)
+    schedule_dict = get_schedule(slots)
+    if not schedule_dict:
+        await callback.message.edit_text(
+            text=messages.NO_SCHEDULE,
+            reply_markup=view_schedule_get_days_keyboard(0, 0, []),
+        )
+    else:
+        years_with_months_days = get_years_with_months_days(schedule_dict)  # ToDo: вынести хелпер в общие
+        chosen_year = callback_data.year
+        chosen_month = callback_data.month
+        if not chosen_year:
+            chosen_year = min(years_with_months_days.keys())
+        if not chosen_month:
+            chosen_month = min(years_with_months_days[chosen_year].keys())
+        days_keyboard_buttons = view_schedule_get_days_keyboard_buttons(
+            years_with_months_days,
+            tz_now,
+            chosen_year,
+            chosen_month,
+        )
+        await callback.message.edit_text(
+            text=messages.SCHEDULE_VIEW,
+            reply_markup=view_schedule_get_days_keyboard(chosen_year, chosen_month, days_keyboard_buttons),
+        )
+    await state.update_data({"schedule_dict": schedule_dict})
     await state.set_state(ScheduleStates.view_schedule)
-    await callback.message.delete()
-    await callback.message.answer(
-        text=messages.NO_SCHEDULE,
-        reply_markup=get_view_schedule_keyboard(),
+    await callback.answer()
+
+
+async def go_to_choose_time_while_view_schedule(
+    callback: types.CallbackQuery,
+    callback_data: Schedule,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    data = await state.get_data()
+    schedule_dict = data["schedule_dict"]
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    chosen_year = callback_data.year
+    chosen_month = callback_data.month
+    chosen_day = callback_data.day
+    times_keyboard_buttons = view_schedule_get_times_keyboard_buttons(
+        schedule_dict,
+        tz_now,
+        chosen_year,
+        chosen_month,
+        chosen_day,
+    )
+    await callback.message.edit_text(
+        text=messages.SCHEDULE_VIEW,
+        reply_markup=view_schedule_get_times_keyboard(
+            chosen_year,
+            chosen_month,
+            chosen_day,
+            times_keyboard_buttons,
+        ),
     )
     await callback.answer()

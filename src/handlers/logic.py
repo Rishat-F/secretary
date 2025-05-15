@@ -4,11 +4,14 @@ from aiogram import types
 from aiogram.fsm.state import State
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.business_logic.schedule.get_schedule import get_schedule
+from src.business_logic.schedule.utils import view_schedule_get_days_keyboard_buttons
 from src import messages
 from src.config import TIMEZONE
 from src.database import (
     delete_service,
     get_available_slots,
+    get_future_slots,
     get_services,
     get_active_appointments,
     insert_service,
@@ -36,13 +39,13 @@ from src.keyboards import (
     AppointmentDateTimePicker,
     back_main_keyboard,
     get_services_to_update_keyboard,
-    get_view_schedule_keyboard,
     main_keyboard,
     make_appointment_get_days_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,
     services_keyboard,
     appointments_keyboard,
+    view_schedule_get_days_keyboard,
 )
 from src.models import Service
 from src.secrets import ADMIN_TG_ID
@@ -694,16 +697,47 @@ def alert_not_available_to_choose_logic(callback_data: AppointmentDateTimePicker
     return alert_text
 
 
-def schedule_logic() -> LogicResult:
+async def schedule_logic(
+    session: AsyncSession,
+) -> LogicResult:
+    utc_now = get_utc_now()
+    tz_now = from_utc(utc_now, TIMEZONE)
+    slots = await get_future_slots(session, utc_now)
+    schedule_dict = get_schedule(slots)
+    state_to_set = ScheduleStates.view_schedule
+    data_to_set = {"schedule_dict": schedule_dict}
     messages_to_answer = [
         MessageToAnswer(
-            messages.NO_SCHEDULE,
+            messages.SCHEDULE_VIEW,
             types.ReplyKeyboardRemove(),
         ),
-        MessageToAnswer(
-            messages.CHOOSE_ACTION,
-            get_view_schedule_keyboard(),
-        ),
     ]
-    state_to_set = ScheduleStates.view_schedule
-    return _get_logic_result(messages_to_answer, state_to_set)
+    if not schedule_dict:
+        messages_to_answer.append(
+            MessageToAnswer(
+                messages.NO_SCHEDULE,
+                view_schedule_get_days_keyboard(0, 0, []),
+            ),
+        )
+        return _get_logic_result(messages_to_answer, state_to_set)
+    else:
+        years_with_months_days = get_years_with_months_days(schedule_dict)  # ToDo: вынести хелпер в общие
+        chosen_year = min(years_with_months_days.keys())
+        chosen_month = min(years_with_months_days[chosen_year].keys())
+        days_to_choose = view_schedule_get_days_keyboard_buttons(
+            years_with_months_days,
+            tz_now,
+            chosen_year,
+            chosen_month,
+        )
+        messages_to_answer = [
+            MessageToAnswer(
+                messages.SCHEDULE_VIEW,
+                types.ReplyKeyboardRemove(),
+            ),
+            MessageToAnswer(
+                messages.SCHEDULE_VIEW,
+                view_schedule_get_days_keyboard(chosen_year, chosen_month, days_to_choose),
+            ),
+        ]
+        return _get_logic_result(messages_to_answer, state_to_set, data_to_set)

@@ -19,17 +19,19 @@ from src.handlers.handlers import (
     day_clicked,
     delete_schedule,
     go_to_choose_day_for_appointment,
+    go_to_choose_day_while_view_schedule,
     go_to_choose_month_for_appointment,
     go_to_choose_month_for_set_schedule,
+    go_to_choose_month_while_view_schedule,
     go_to_choose_time_for_appointment,
+    go_to_choose_time_while_view_schedule,
     go_to_choose_year_for_appointment,
     go_to_choose_year_for_set_schedule,
+    go_to_choose_year_while_view_schedule,
     go_to_confirm_appointment,
-    go_to_edit_schedule_menu,
     go_to_main_menu_from_schedule,
     go_to_set_working_days,
     go_to_set_working_hours,
-    go_to_view_schedule,
     ignore_inline_button,
     save_schedule,
     schedule,
@@ -219,7 +221,6 @@ def register_handlers(dp: Dispatcher) -> None:
         go_to_main_menu_from_schedule,
         or_f(
             ScheduleStates.view_schedule,
-            ScheduleStates.choose_edit_schedule_action,
             ScheduleStates.confirm_schedule_clear,
             ScheduleStates.choose_year,
             ScheduleStates.choose_month,
@@ -229,32 +230,40 @@ def register_handlers(dp: Dispatcher) -> None:
         Schedule.filter(F.action == "main_menu"),
     )
     dp.callback_query.register(
-        go_to_view_schedule,
+        go_to_choose_year_while_view_schedule,
+        ScheduleStates.view_schedule,
+        Schedule.filter(F.action == "choose_year"),
+    )
+    dp.callback_query.register(
+        go_to_choose_month_while_view_schedule,
+        ScheduleStates.view_schedule,
+        Schedule.filter(F.action == "choose_month"),
+    )
+    dp.callback_query.register(
+        go_to_choose_day_while_view_schedule,
         or_f(
-            ScheduleStates.choose_edit_schedule_action,
             ScheduleStates.choose_year,
             ScheduleStates.choose_month,
             ScheduleStates.set_working_days,
             ScheduleStates.set_working_hours,
+            ScheduleStates.confirm_schedule_clear,
+            ScheduleStates.view_schedule,
         ),
         Schedule.filter(F.action == "view_schedule"),
     )
     dp.callback_query.register(
-        go_to_edit_schedule_menu,
-        or_f(
-            ScheduleStates.view_schedule,
-            ScheduleStates.confirm_schedule_clear,
-        ),
-        Schedule.filter(F.action == "edit_schedule"),
+        go_to_choose_time_while_view_schedule,
+        ScheduleStates.view_schedule,
+        Schedule.filter(F.action == "choose_time"),
     )
     dp.callback_query.register(
         schedule_modifying,
-        ScheduleStates.choose_edit_schedule_action,
+        ScheduleStates.view_schedule,
         Schedule.filter(F.action == "modify_schedule"),
     )
     dp.callback_query.register(
         clear_schedule_clicked,
-        ScheduleStates.choose_edit_schedule_action,
+        ScheduleStates.view_schedule,
         Schedule.filter(F.action == "clear_schedule"),
     )
     dp.callback_query.register(
