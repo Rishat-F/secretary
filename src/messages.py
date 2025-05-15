@@ -76,6 +76,31 @@ APPOINTMENT_SAVED = "Запись прошла успешно!"
 COME = "Приходите:\n\n{appointment_view}"
 NEW_APPOINTMENT_CREATED = "Новая запись на прием!\n\n{appointment_view}"
 
-SCHEDULE_DEFINING = "Задание графика работы"
-SET_WORKING_DAYS = "Задайте рабочие числа\n\n{days_statuses_view}"
-SET_WORKING_HOURS = "Задайте рабочие часы\n\n{times_statuses_view}"
+NO_SCHEDULE = "График работы не задан"
+HOW_TO_EDIT_SCHEDULE = (
+    'Для изменения графика работы нажмите кнопку <b>"{modify_button}"</b>.\n'
+    'Для обнуления графика работы нажмите кнопку <b>"{clear_button}"</b>'
+)
+SELECT_WORKING_DATES = "Выберите рабочие даты"
+SELECT_WORKING_HOURS = "Выберите рабочие часы"
+HOW_TO_MODIFY_SCHEDULE = (
+    f"Для задания графика работы {SELECT_WORKING_DATES.lower()}, "
+    f"{SELECT_WORKING_HOURS.lower()} "
+    'и нажмите кнопку <b>"{save_button}"</b>.\n'
+    "Если на выбранные даты график работы уже имелся, то рабочие часы будут перезаписаны.\n\n"
+    f"Для удаления дат целиком из графика работы {SELECT_WORKING_DATES.lower()} "
+    'и нажмите кнопку <b>"{delete_button}"</b>.\n'
+    "Для удаления определенных рабочих часов из графика работы "
+    f"{SELECT_WORKING_DATES.lower()}, {SELECT_WORKING_HOURS.lower()} "
+    'и нажмите кнопку <b>"{delete_button}"</b>'
+)
+SET_WORKING_DATES = f"<b>{SELECT_WORKING_DATES}:</b>"
+SELECTED_WORKING_DATES = "<b>Выбранные рабочие даты:</b>\n{selected_dates_view}"
+SET_WORKING_HOURS = f"<b>{SELECT_WORKING_HOURS}:</b>"
+SELECTED_WORKING_HOURS = "<b>Выбранные рабочие часы:</b>\n{selected_times_view}"
+SCHEDULE_MODIFIED = "График работы изменен"
+CLEAR_SCHEDULE_WARNING = (
+    "Весь незанятый график работы будет удален.\n"
+    "Вы точно хотите обнулить график работы?"
+)
+SCHEDULE_CLEARED = "График работы обнулен"

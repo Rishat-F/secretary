@@ -2,7 +2,8 @@
 
 from datetime import datetime
 
-from sqlalchemy import and_, select, update
+from sqlalchemy import and_, delete, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -48,9 +49,8 @@ async def update_service(
 
 async def delete_service(session: AsyncSession, name: str) -> None:
     stmt = (
-        update(Service)
+        delete(Service)
         .where(and_(Service.name == name, Service.deleted.is_(False)))
-        .values(deleted=True)
     )
     await session.execute(stmt)
     await session.commit()
@@ -75,6 +75,43 @@ async def get_active_appointments(
 
 async def insert_appointment(session: AsyncSession, appointment: Appointment) -> None:
     session.add(appointment)
+
+
+async def insert_slot(session: AsyncSession, slot: Slot) -> None:
+    session.add(slot)
+
+
+async def get_slots_by_date(session: AsyncSession, iso_date: str) -> list[Slot]:
+    query = select(Slot).where(Slot.datetime_.istartswith(iso_date))
+    result = await session.execute(query)
+    slots = result.scalars().all()
+    return list(slots)
+
+
+async def delete_not_booked_future_slots(
+    session: AsyncSession,
+    current_utc_datetime: datetime,
+) -> None:
+    booked_slots = select(Reservation.datetime_).where(Reservation.datetime_ > current_utc_datetime)
+    stmt = (
+        delete(Slot)
+        .where(and_(Slot.datetime_ > current_utc_datetime, Slot.datetime_.not_in(booked_slots)))
+    )
+    await session.execute(stmt)
+
+
+async def delete_slots(
+    session: AsyncSession,
+    iso_utc_slots: list[str],
+):
+    for iso_utc_slot in iso_utc_slots:
+        utc_datetime = datetime.fromisoformat(iso_utc_slot)
+        stmt = delete(Slot).where(Slot.datetime_ == utc_datetime)
+        try:
+            await session.execute(stmt)
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
 
 
 async def get_available_slots(

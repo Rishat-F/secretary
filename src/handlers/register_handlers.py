@@ -8,21 +8,32 @@ from src.handlers.handlers import (
     alert_not_available_to_choose_day,
     appointment_confirmed,
     cancel_choose_date_for_appointment,
-    cancel_set_schedule,
     choose_service_field_to_update,
     choose_service_to_delete,
     choose_service_to_update,
     choose_service_for_appointment,
     choose_services_action,
     choose_appointments_action,
+    clear_schedule_clicked,
+    clear_schedule_confirmed,
     day_clicked,
+    delete_schedule,
     go_to_choose_day_for_appointment,
     go_to_choose_month_for_appointment,
+    go_to_choose_month_for_set_schedule,
     go_to_choose_time_for_appointment,
     go_to_choose_year_for_appointment,
+    go_to_choose_year_for_set_schedule,
     go_to_confirm_appointment,
+    go_to_edit_schedule_menu,
+    go_to_main_menu_from_schedule,
+    go_to_set_working_days,
+    go_to_set_working_hours,
+    go_to_view_schedule,
     ignore_inline_button,
+    save_schedule,
     schedule,
+    schedule_modifying,
     set_service_duration,
     set_service_name,
     set_service_new_duration,
@@ -34,9 +45,9 @@ from src.handlers.handlers import (
     appointments,
     time_clicked,
 )
-from src.keyboards import SCHEDULE, USLUGI, ZAPISI, AppointmentDateTimePicker, ScheduleDateTimePicker
+from src.keyboards import SCHEDULE, USLUGI, ZAPISI, AppointmentDateTimePicker, Schedule
 from src.secrets import ADMIN_TG_ID
-from src.states import ServicesActions, MakeAppointment, SetSchedule
+from src.states import ServicesActions, MakeAppointment, ScheduleStates
 
 
 def register_handlers(dp: Dispatcher) -> None:
@@ -68,7 +79,7 @@ def register_handlers(dp: Dispatcher) -> None:
         ignore_inline_button,
         or_f(
             AppointmentDateTimePicker.filter(F.action == "ignore"),
-            ScheduleDateTimePicker.filter(F.action == "ignore"),
+            Schedule.filter(F.action == "ignore"),
         ),
     )
     dp.callback_query.register(
@@ -205,22 +216,114 @@ def register_handlers(dp: Dispatcher) -> None:
         F.text.lower() == SCHEDULE.lower(),
     )
     dp.callback_query.register(
-        cancel_set_schedule,
+        go_to_main_menu_from_schedule,
         or_f(
-            SetSchedule.set_working_days,
-            SetSchedule.set_working_hours,
+            ScheduleStates.view_schedule,
+            ScheduleStates.choose_edit_schedule_action,
+            ScheduleStates.confirm_schedule_clear,
+            ScheduleStates.choose_year,
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_days,
+            ScheduleStates.set_working_hours,
         ),
-        ScheduleDateTimePicker.filter(F.action == "cancel"),
+        Schedule.filter(F.action == "main_menu"),
+    )
+    dp.callback_query.register(
+        go_to_view_schedule,
+        or_f(
+            ScheduleStates.choose_edit_schedule_action,
+            ScheduleStates.choose_year,
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_days,
+            ScheduleStates.set_working_hours,
+        ),
+        Schedule.filter(F.action == "view_schedule"),
+    )
+    dp.callback_query.register(
+        go_to_edit_schedule_menu,
+        or_f(
+            ScheduleStates.view_schedule,
+            ScheduleStates.confirm_schedule_clear,
+        ),
+        Schedule.filter(F.action == "edit_schedule"),
+    )
+    dp.callback_query.register(
+        schedule_modifying,
+        ScheduleStates.choose_edit_schedule_action,
+        Schedule.filter(F.action == "modify_schedule"),
+    )
+    dp.callback_query.register(
+        clear_schedule_clicked,
+        ScheduleStates.choose_edit_schedule_action,
+        Schedule.filter(F.action == "clear_schedule"),
+    )
+    dp.callback_query.register(
+        clear_schedule_confirmed,
+        ScheduleStates.confirm_schedule_clear,
+        Schedule.filter(F.action == "clear_schedule_confirmed"),
+    )
+    dp.callback_query.register(
+        go_to_choose_year_for_set_schedule,
+        or_f(
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_days,
+        ),
+        Schedule.filter(F.action == "choose_year"),
+    )
+    dp.callback_query.register(
+        go_to_choose_month_for_set_schedule,
+        or_f(
+            ScheduleStates.choose_year,
+            ScheduleStates.set_working_days,
+        ),
+        Schedule.filter(F.action == "choose_month"),
+    )
+    dp.callback_query.register(
+        go_to_set_working_days,
+        or_f(
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_hours,
+        ),
+        Schedule.filter(F.action == "choose_day"),
+    )
+    dp.callback_query.register(
+        go_to_set_working_hours,
+        or_f(
+            ScheduleStates.choose_year,
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_days,
+        ),
+        Schedule.filter(F.action == "set_time"),
+    )
+    dp.callback_query.register(
+        save_schedule,
+        or_f(
+            ScheduleStates.choose_year,
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_days,
+            ScheduleStates.set_working_hours,
+        ),
+        Schedule.filter(F.action == "save"),
+    )
+    dp.callback_query.register(
+        delete_schedule,
+        or_f(
+            ScheduleStates.choose_year,
+            ScheduleStates.choose_month,
+            ScheduleStates.set_working_days,
+            ScheduleStates.set_working_hours,
+        ),
+        Schedule.filter(F.action == "delete"),
     )
     dp.callback_query.register(
         time_clicked,
-        SetSchedule.set_working_hours,
-        ScheduleDateTimePicker.filter(F.action == "time_clicked"),
+        ScheduleStates.set_working_hours,
+        Schedule.filter(F.action == "time_clicked"),
     )
     dp.callback_query.register(
         day_clicked,
-        SetSchedule.set_working_days,
-        ScheduleDateTimePicker.filter(
+        ScheduleStates.set_working_days,
+        Schedule.filter(
             F.action.in_(
                 [
                     ScheduleDayStatus.SELECTED,
@@ -231,6 +334,6 @@ def register_handlers(dp: Dispatcher) -> None:
     )
     dp.callback_query.register(
         alert_not_available_to_choose_day,
-        SetSchedule.set_working_days,
-        ScheduleDateTimePicker.filter(F.action == ScheduleDayStatus.NOT_AVAILABLE),
+        ScheduleStates.set_working_days,
+        Schedule.filter(F.action == ScheduleDayStatus.NOT_AVAILABLE),
     )

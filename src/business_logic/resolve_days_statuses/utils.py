@@ -2,7 +2,9 @@ import re
 from calendar import Calendar
 from datetime import date, datetime, timedelta
 
+from src import messages
 from src.keyboards import InlineButton
+from src.utils import months
 
 
 MIN_DAYS_STATUSES_LEN = 40
@@ -546,18 +548,33 @@ def actualize_groups_selection_status(days_statuses: list[str]) -> list[str]:
     return days_statuses
 
 
-def get_selected_days(days_statuses: list[str]) -> list[int]:
-    selected_days: list[int] = []
+def get_selected_and_not_selected_dates(days_statuses: list[str]) -> tuple[list[str], list[str]]:
+    selected_days: list[str] = []
+    not_selected_days: list[str] = []
     for element in days_statuses:
         if _is_day_element(element):
             status, iso_date = split_element(element)
-            date_ = date.fromisoformat(iso_date)
             if status == ScheduleDayStatus.SELECTED:
-                selected_days.append(date_.day)
-    return selected_days
+                selected_days.append(iso_date)
+            elif status == ScheduleDayStatus.NOT_SELECTED:
+                not_selected_days.append(iso_date)
+    return selected_days, not_selected_days
 
 
-def get_selected_days_view(days: list[int]) -> str:
+def _get_years_months_days(iso_dates: list[str]) -> dict[int, dict[int, list[int]]]:
+    iso_dates = sorted(iso_dates)
+    years_months_days = {}
+    for iso_date in iso_dates:
+        date_ = date.fromisoformat(iso_date)
+        if date_.year not in years_months_days:
+            years_months_days[date_.year] = {}
+        if date_.month not in years_months_days[date_.year]:
+            years_months_days[date_.year][date_.month] = []
+        years_months_days[date_.year][date_.month].append(date_.day)
+    return years_months_days
+
+
+def _get_month_selected_days_view(days: list[int]) -> str:
     view = ""
     prev_day = -1
     for i in range(len(days)):
@@ -574,6 +591,23 @@ def get_selected_days_view(days: list[int]) -> str:
         prev_day = current_day
     view = view.strip()
     view = view.replace(" ", ", ")
+    return view
+
+
+def get_selected_dates_view(iso_dates: list[str]) -> str:
+    view = ""
+    years_months_days = _get_years_months_days(iso_dates)
+    for year in years_months_days:
+        view += f"\n{str(year)}"
+        for month in years_months_days[year]:
+            view += f"\n      {months[month]}"
+            month_selected_days_view = _get_month_selected_days_view(years_months_days[year][month])
+            view += f"\n            {month_selected_days_view}"
+    view = view.strip()
+    if view == "":
+        view = messages.SET_WORKING_DATES
+    else:
+        view = messages.SELECTED_WORKING_DATES.format(selected_dates_view=view)
     return view
 
 
@@ -645,7 +679,50 @@ _days_of_week = {
 }
 
 
-def get_set_working_days_keyboard_buttons(days_statuses: list[str]) -> list[InlineButton]:
+def set_schedule_get_years_keyboard_buttons(now_: datetime) -> list[InlineButton]:
+    result = []
+    current_year = now_.year
+    next_year = current_year + 1
+    result.append(
+        InlineButton(
+            action="choose_month",
+            text=f"[ {current_year} ]",
+            value=str(current_year),
+        ),
+    )
+    result.append(
+        InlineButton(
+            action="choose_month",
+            text=f"{next_year}",
+            value=str(next_year),
+        ),
+    )
+    return result
+
+
+def set_schedule_get_months_keyboard_buttons(
+    now_: datetime,
+    chosen_year: int,
+) -> list[InlineButton]:
+    current_year = now_.year
+    current_month = now_.month
+    assert chosen_year >= current_year
+    result = []
+    if chosen_year == current_year:
+        for month_num, month_name in months.items():
+            if month_num < current_month:
+                result.append(InlineButton("not_available", "✖️", str(month_num)))
+            elif month_num == current_month:
+                result.append(InlineButton("choose_day", f"[ {month_name} ]", str(month_num)))
+            else:
+                result.append(InlineButton("choose_day", month_name, str(month_num)))
+    else:
+        for month_num, month_name in months.items():
+            result.append(InlineButton("choose_day", month_name, str(month_num)))
+    return result
+
+
+def set_schedule_get_days_keyboard_buttons(days_statuses: list[str]) -> list[InlineButton]:
     result = []
     for i in range(len(days_statuses)):
         element = days_statuses[i]

@@ -31,7 +31,10 @@ def get_years_with_months_days(
     return years_with_months_days
 
 
-def get_years_keyboard_buttons(years: list[int], now_: datetime) -> list[InlineButton]:
+def make_appointment_get_years_keyboard_buttons(
+    years: list[int],
+    now_: datetime,
+) -> list[InlineButton]:
     result = []
     current_year = now_.year
     years_to_choose = [year_ for year_ in years if year_ >= current_year]
@@ -72,7 +75,7 @@ def get_years_keyboard_buttons(years: list[int], now_: datetime) -> list[InlineB
     return result
 
 
-def get_months_keyboard_buttons(
+def make_appointment_get_months_keyboard_buttons(
     years_with_months: dict[int, list[int]],
     now_: datetime,
     chosen_year: int,
@@ -104,7 +107,7 @@ def get_months_keyboard_buttons(
     return result
 
 
-def get_days_keyboard_buttons(
+def make_appointment_get_days_keyboard_buttons(
     years_with_months_days: dict[int, dict[int, list[int]]],
     now_: datetime,
     chosen_year: int | None = None,
@@ -160,7 +163,7 @@ def get_days_keyboard_buttons(
     return result
 
 
-def get_times_keyboard_buttons(
+def make_appointment_get_times_keyboard_buttons(
     slots: dict[int, dict[int, dict[int, list[str]]]],
     now_: datetime,
     chosen_year: int,

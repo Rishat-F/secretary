@@ -1,7 +1,9 @@
-from datetime import time
+from datetime import date, datetime, time
 
+from src import messages
 from src.constraints import DURATION_MULTIPLIER
 from src.keyboards import InlineButton
+from src.utils import to_utc
 
 
 def _get_times_statuses_len(duration_multiplier: int) -> int:
@@ -108,6 +110,24 @@ def _get_iso_time_from_time_index(index: int, duration_multiplier: int) -> str:
     return time_.isoformat(timespec="minutes")
 
 
+def get_selected_times(times_statuses: list[str]) -> list[str]:
+    selected_iso_times = []
+    duration_multiplier = _get_duration_multiplier_by_times_statuses(len(times_statuses))
+    for i in range(len(times_statuses)):
+        current_element = times_statuses[i]
+        try:
+            next_element = times_statuses[i+1]
+        except IndexError:
+            next_element = None
+        if (
+            current_element == ScheduleTimeStatus.SELECTED
+            and next_element == ScheduleTimeStatus.SELECTED
+        ):
+            iso_time = _get_iso_time_from_time_index(i, duration_multiplier)
+            selected_iso_times.append(iso_time)
+    return selected_iso_times
+
+
 def get_times_statuses_view(times_statuses: list[str]) -> str:
     view = ""
     duration_multiplier = _get_duration_multiplier_by_times_statuses(len(times_statuses))
@@ -134,13 +154,13 @@ def get_times_statuses_view(times_statuses: list[str]) -> str:
         prev_element = times_statuses[i]
     view = view.strip()
     if view == "":
-        view = "Рабочие часы не выбраны"
+        view = messages.SET_WORKING_HOURS
     else:
-        view = "Выбранные рабочие часы:\n" + view
+        view = messages.SELECTED_WORKING_HOURS.format(selected_times_view=view)
     return view
 
 
-def get_set_working_hours_keyboard_buttons(times_statuses: list[str]) -> list[InlineButton]:
+def set_schedule_get_times_keyboard_buttons(times_statuses: list[str]) -> list[InlineButton]:
     result = []
     for i in range(len(times_statuses)):
         iso_time = _get_iso_time_from_time_index(i, DURATION_MULTIPLIER)
@@ -152,3 +172,40 @@ def get_set_working_hours_keyboard_buttons(times_statuses: list[str]) -> list[In
             text = iso_time
         result.append(InlineButton("time_clicked", text, value=str(i)))
     return result
+
+
+def get_slots_to_save(iso_tz_dates: list[str], iso_tz_times: list[str]) -> dict[str, list[str]]:
+    assert iso_tz_dates
+    assert iso_tz_times
+    utc_slots: list[datetime] = []
+    for iso_tz_date in iso_tz_dates:
+        for iso_time in iso_tz_times:
+            tz_date = date.fromisoformat(iso_tz_date)
+            tz_time = time.fromisoformat(iso_time)
+            slot_tz_dt = datetime(tz_date.year, tz_date.month, tz_date.day, tz_time.hour, tz_time.minute)
+            slot_utc_dt = to_utc(slot_tz_dt)
+            utc_slots.append(slot_utc_dt)
+    dates_slots = {}
+    for utc_datetime in utc_slots:
+        iso_date = utc_datetime.date().isoformat()
+        iso_datetime = utc_datetime.replace(tzinfo=None).isoformat()
+        if iso_date not in dates_slots:
+            dates_slots[iso_date] = [iso_datetime]
+        else:
+            dates_slots[iso_date].append(iso_datetime)
+    return dates_slots
+
+
+def get_slots_to_delete(iso_tz_dates: list[str], iso_tz_times: list[str]) -> list[str]:
+    assert iso_tz_dates
+    assert iso_tz_times
+    slots = []
+    for iso_tz_date in iso_tz_dates:
+        for iso_tz_time in iso_tz_times:
+            tz_date = date.fromisoformat(iso_tz_date)
+            tz_time = time.fromisoformat(iso_tz_time)
+            slot_tz_dt = datetime(tz_date.year, tz_date.month, tz_date.day, tz_time.hour, tz_time.minute)
+            slot_utc_dt = to_utc(slot_tz_dt)
+            iso_utc_datetime = slot_utc_dt.replace(tzinfo=None).isoformat()
+            slots.append(iso_utc_datetime)
+    return slots

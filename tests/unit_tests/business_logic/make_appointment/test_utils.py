@@ -5,11 +5,11 @@ import pytest
 from src.business_logic.make_appointment.utils import (
     check_chosen_datetime_is_possible,
     get_datetimes_needed_for_appointment,
-    get_months_keyboard_buttons,
     get_times_for_appointment,
-    get_years_keyboard_buttons,
     get_years_with_months,
     get_years_with_months_days,
+    make_appointment_get_months_keyboard_buttons,
+    make_appointment_get_years_keyboard_buttons,
 )
 from src.exceptions import (
     DayBecomeNotAvailable,
@@ -234,9 +234,16 @@ def test_get_datetimes_needed_for_appointment(starts_at, duration, expected_date
         ),
     ],
 )
-def test_get_months_keyboard_buttons(years_with_months, current_year, current_month, chosen_year, expected_result):
+def test_make_appointment_get_months_keyboard_buttons(
+    years_with_months,
+    current_year,
+    current_month,
+    chosen_year,
+    expected_result,
+):
     now_ = datetime(current_year, current_month, 15)
-    assert get_months_keyboard_buttons(years_with_months, now_, chosen_year) == expected_result
+    result = make_appointment_get_months_keyboard_buttons(years_with_months, now_, chosen_year)
+    assert result == expected_result
 
 
 @pytest.mark.parametrize(
@@ -440,9 +447,10 @@ def test_get_times_for_appointment(slots_datetimes, service_duration, expected_p
         ),
     ],
 )
-def test_get_years_keyboard_buttons(years, current_year, expected_result):
+def test_make_appointment_get_years_keyboard_buttons(years, current_year, expected_result):
     now_ = datetime(current_year, 6, 15)
-    assert get_years_keyboard_buttons(years, now_) == expected_result
+    result = make_appointment_get_years_keyboard_buttons(years, now_)
+    assert result == expected_result
 
 
 @pytest.mark.parametrize(
