@@ -24,7 +24,7 @@ from src.handlers.handlers import (
     go_to_choose_month_for_set_schedule,
     go_to_choose_month_while_view_schedule,
     go_to_choose_time_for_appointment,
-    go_to_choose_time_while_view_schedule,
+    show_working_hours,
     go_to_choose_year_for_appointment,
     go_to_choose_year_for_set_schedule,
     go_to_choose_year_while_view_schedule,
@@ -252,7 +252,7 @@ def register_handlers(dp: Dispatcher) -> None:
         Schedule.filter(F.action == "view_schedule"),
     )
     dp.callback_query.register(
-        go_to_choose_time_while_view_schedule,
+        show_working_hours,
         ScheduleStates.view_schedule,
         Schedule.filter(F.action == "choose_time"),
     )

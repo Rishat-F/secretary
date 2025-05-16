@@ -161,6 +161,42 @@ def get_times_statuses_view(times_statuses: list[str]) -> str:
     return view
 
 
+def get_working_hours_view(iso_times: list[str], duration_multiplier: int) -> str:
+    assert iso_times
+    times = [time.fromisoformat(iso_time) for iso_time in iso_times]
+    times = sorted(times)
+    view = ""
+    prev_element = None
+    for i in range(len(times)):
+        current_element = times[i]
+        try:
+            next_element = times[i+1]
+        except IndexError:
+            next_element = None
+        if (
+            prev_element is None
+            or (
+                (current_element.hour*60+current_element.minute) - (prev_element.hour*60+prev_element.minute)
+            ) != duration_multiplier
+        ):
+            interval_start = current_element.isoformat(timespec="minutes")
+            view += f"\n{interval_start}-"
+        if (
+            next_element is None
+            or (
+                (next_element.hour*60+next_element.minute) - (current_element.hour*60+current_element.minute)
+            ) != duration_multiplier
+        ):
+            total_minutes = current_element.hour*60+current_element.minute
+            interval_finish_minutes = total_minutes + duration_multiplier
+            hours = (interval_finish_minutes // 60) % 24
+            minutes = interval_finish_minutes % 60
+            view += time(hours, minutes).isoformat(timespec="minutes")
+        prev_element = times[i]
+    view = view.strip()
+    return view
+
+
 def set_schedule_get_times_keyboard_buttons(times_statuses: list[str]) -> list[InlineButton]:
     result = []
     for i in range(len(times_statuses)):

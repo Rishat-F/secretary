@@ -15,6 +15,7 @@ from src.business_logic.resolve_times_statuses.utils import (
     get_slots_to_delete,
     get_slots_to_save,
     get_times_statuses_view,
+    get_working_hours_view,
 )
 
 
@@ -592,4 +593,31 @@ def test_get_slots_to_save(iso_dates, iso_times, expected_result):
 )
 def test_get_slots_to_delete(iso_dates, iso_times, expected_result):
     result = get_slots_to_delete(iso_dates, iso_times)
+    assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "iso_times,duration_multiplier,expected_result",
+    [
+        (["10:00"], 30, "10:00-10:30"),
+        (["00:00"], 30, "00:00-00:30"),
+        (["23:30"], 30, "23:30-00:00"),
+        (["10:00", "10:30", "11:00", "11:30"], 30, "10:00-12:00"),
+        (["10:00", "15:00"], 30, "10:00-10:30\n15:00-15:30"),
+        (["10:00", "10:30", "15:00", "15:30"], 30, "10:00-11:00\n15:00-16:00"),
+        (["15:30", "10:00", "15:00", "10:30"], 30, "10:00-11:00\n15:00-16:00"),
+        (["10:00"], 15, "10:00-10:15"),
+        (["10:00", "10:15", "10:30", "10:45"], 15, "10:00-11:00"),
+        (["10:00", "15:00"], 15, "10:00-10:15\n15:00-15:15"),
+        (["10:00", "11:00", "15:00", "16:00"], 60, "10:00-12:00\n15:00-17:00"),
+        (["16:00", "10:00", "15:00", "11:00"], 60, "10:00-12:00\n15:00-17:00"),
+        (
+            ["15:00", "09:30", "22:30", "11:30", "06:00"],
+            30,
+            "06:00-06:30\n09:30-10:00\n11:30-12:00\n15:00-15:30\n22:30-23:00",
+        ),
+    ],
+)
+def test_get_working_hours_view(iso_times, duration_multiplier, expected_result):
+    result = get_working_hours_view(iso_times, duration_multiplier)
     assert result == expected_result
