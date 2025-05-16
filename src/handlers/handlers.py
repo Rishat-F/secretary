@@ -4,6 +4,7 @@ from datetime import datetime, time, timedelta
 from typing import Any
 
 from aiogram import Bot, types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -42,15 +43,16 @@ from src.business_logic.resolve_times_statuses.utils import (
     get_slots_to_delete,
     get_slots_to_save,
     get_times_statuses_view,
+    get_working_hours_view,
     set_schedule_get_times_keyboard_buttons,
 )
 from src.business_logic.schedule.get_schedule import get_schedule
 from src.business_logic.schedule.utils import (
     view_schedule_get_days_keyboard_buttons,
     view_schedule_get_months_keyboard_buttons,
-    view_schedule_get_times_keyboard_buttons,
     view_schedule_get_years_keyboard_buttons,
 )
+from src.constraints import DURATION_MULTIPLIER
 from src.models import Appointment, Slot
 from src.handlers.logic import (
     LogicResult,
@@ -101,7 +103,6 @@ from src.keyboards import (
     set_schedule_get_years_keyboard,
     view_schedule_get_days_keyboard,
     view_schedule_get_months_keyboard,
-    view_schedule_get_times_keyboard,
     view_schedule_get_years_keyboard,
 )
 from src.secrets import ADMIN_TG_ID
@@ -1079,7 +1080,7 @@ async def go_to_choose_day_while_view_schedule(
     await callback.answer()
 
 
-async def go_to_choose_time_while_view_schedule(
+async def show_working_hours(
     callback: types.CallbackQuery,
     callback_data: Schedule,
     state: FSMContext,
@@ -1088,25 +1089,14 @@ async def go_to_choose_time_while_view_schedule(
         return None
     data = await state.get_data()
     schedule_dict = data["schedule_dict"]
-    utc_now = get_utc_now()
-    tz_now = from_utc(utc_now, TIMEZONE)
     chosen_year = callback_data.year
     chosen_month = callback_data.month
     chosen_day = callback_data.day
-    times_keyboard_buttons = view_schedule_get_times_keyboard_buttons(
-        schedule_dict,
-        tz_now,
-        chosen_year,
-        chosen_month,
-        chosen_day,
-    )
-    await callback.message.edit_text(
-        text=messages.SCHEDULE_VIEW,
-        reply_markup=view_schedule_get_times_keyboard(
-            chosen_year,
-            chosen_month,
-            chosen_day,
-            times_keyboard_buttons,
-        ),
-    )
-    await callback.answer()
+    date_lang = date_to_lang(chosen_year, chosen_month, chosen_day)
+    iso_working_hours = schedule_dict[chosen_year][chosen_month][chosen_day]
+    working_hours_view = get_working_hours_view(iso_working_hours, DURATION_MULTIPLIER)
+    text = f"{date_lang}\n\n{working_hours_view}"
+    try:
+        await callback.answer(text, show_alert=True)
+    except TelegramBadRequest:
+        await callback.answer(messages.CANNOT_SHOW_WORKING_HOURS, show_alert=True)  # ToDo: продумать как быть в этой ситуации (слишком длинный текст - более 200 символов)
