@@ -116,3 +116,38 @@ def view_schedule_get_days_keyboard_buttons(
             action = "choose_time"
         result.append(InlineButton(action, text, str(month_day_number)))
     return result
+
+
+def view_schedule_get_times_keyboard_buttons(
+    schedule: dict[int, dict[int, dict[int, list[str]]]],
+    now_: datetime,
+    chosen_year: int,
+    chosen_month: int,
+    chosen_day: int,
+) -> list[InlineButton]:
+    current_year = now_.year
+    current_month = now_.month
+    current_day = now_.day
+    assert chosen_year >= current_year
+    if chosen_year == current_year:
+        assert chosen_month >= current_month
+    if chosen_year == current_year and chosen_month == current_month:
+        assert chosen_day >= current_day
+    assert chosen_year in schedule
+    assert chosen_month in schedule[chosen_year]
+    assert chosen_day in schedule[chosen_year][chosen_month]
+    current_time = now_.time().isoformat(timespec="minutes")
+    if chosen_year == current_year and chosen_month == current_month and chosen_day == current_day:
+        available_times = [
+            time_ for time_ in schedule[chosen_year][chosen_month][chosen_day]
+            if time_ > current_time
+        ]
+    else:
+        available_times = [time_ for time_ in schedule[chosen_year][chosen_month][chosen_day]]
+    result = []
+    result.append(InlineButton("view_schedule", str(chosen_day), str(chosen_day)))
+    result.append(InlineButton("choose_month", str(months[chosen_month]), str(chosen_month)))
+    result.append(InlineButton("choose_year", str(chosen_year), str(chosen_year)))
+    for time_ in available_times:
+        result.append(InlineButton("ignore", time_, time_))
+    return result

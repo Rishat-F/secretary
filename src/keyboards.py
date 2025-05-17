@@ -491,3 +491,27 @@ def view_schedule_get_days_keyboard(
     _attach_edit_schedule_buttons(builder)
     _attach_footer_buttons_for_schedule(builder, with_view_button=False)
     return builder.as_markup()
+
+
+def view_schedule_get_times_keyboard(
+    chosen_year: int,
+    chosen_month: int,
+    chosen_day: int,
+    times_keyboard_buttons: list[InlineButton],
+) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for button in times_keyboard_buttons:
+        builder.button(
+            text=button.text,
+            callback_data=Schedule(
+                action=button.action,
+                year=chosen_year,
+                month=chosen_month,
+                day=chosen_day,
+                time=button.value,
+            ),
+        )
+    builder.adjust(3, 6, 6, 6, 6, 6, 6, 6, 6)
+    _attach_edit_schedule_buttons(builder)
+    _attach_footer_buttons_for_schedule(builder, with_view_button=False)
+    return builder.as_markup()

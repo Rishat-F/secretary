@@ -50,6 +50,7 @@ from src.business_logic.schedule.get_schedule import get_schedule
 from src.business_logic.schedule.utils import (
     view_schedule_get_days_keyboard_buttons,
     view_schedule_get_months_keyboard_buttons,
+    view_schedule_get_times_keyboard_buttons,
     view_schedule_get_years_keyboard_buttons,
 )
 from src.constraints import DURATION_MULTIPLIER
@@ -103,6 +104,7 @@ from src.keyboards import (
     set_schedule_get_years_keyboard,
     view_schedule_get_days_keyboard,
     view_schedule_get_months_keyboard,
+    view_schedule_get_times_keyboard,
     view_schedule_get_years_keyboard,
 )
 from src.secrets import ADMIN_TG_ID
@@ -1098,5 +1100,23 @@ async def show_working_hours(
     text = f"{date_lang}\n\n{working_hours_view}"
     try:
         await callback.answer(text, show_alert=True)
-    except TelegramBadRequest:
-        await callback.answer(messages.CANNOT_SHOW_WORKING_HOURS, show_alert=True)  # ToDo: продумать как быть в этой ситуации (слишком длинный текст - более 200 символов)
+    except TelegramBadRequest:  # слишком длинный текст (более 200 символов)
+        utc_now = get_utc_now()
+        tz_now = from_utc(utc_now, TIMEZONE)
+        times_keyboard_buttons = view_schedule_get_times_keyboard_buttons(
+            schedule_dict,
+            tz_now,
+            chosen_year,
+            chosen_month,
+            chosen_day,
+        )
+        await callback.message.edit_text(
+            text=messages.SCHEDULE_VIEW,
+            reply_markup=view_schedule_get_times_keyboard(
+                chosen_year,
+                chosen_month,
+                chosen_day,
+                times_keyboard_buttons,
+            ),
+        )
+        await callback.answer()
