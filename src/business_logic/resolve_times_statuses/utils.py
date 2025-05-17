@@ -1,19 +1,15 @@
 from datetime import date, datetime, time
 
 from src import messages
+from src.business_logic.schedule.utils import MINIMAL_ALL_TIMES_LEN, get_all_times_len
 from src.config import TIMEZONE
 from src.constraints import DURATION_MULTIPLIER
 from src.keyboards import InlineButton
 from src.utils import to_utc
 
 
-def _get_times_statuses_len(duration_multiplier: int) -> int:
-    times_statuses_len = (24 * 60) // duration_multiplier + 1
-    return times_statuses_len
-
-
-TIMES_STATUSES_LEN = _get_times_statuses_len(DURATION_MULTIPLIER)
-MINIMAL_TIMES_STATUSES_LEN = 3
+TIMES_STATUSES_LEN = get_all_times_len(DURATION_MULTIPLIER)
+MINIMAL_TIMES_STATUSES_LEN = MINIMAL_ALL_TIMES_LEN
 
 
 class ScheduleTimeStatus:

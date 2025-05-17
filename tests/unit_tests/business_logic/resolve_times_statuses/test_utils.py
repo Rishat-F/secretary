@@ -4,7 +4,6 @@ from src.business_logic.resolve_times_statuses.utils import (
     MINIMAL_TIMES_STATUSES_LEN,
     TIMES_STATUSES_LEN,
     _get_duration_multiplier_by_times_statuses,
-    _get_times_statuses_len,
     _no_isolated_selected,
     _no_selected_edge_combination,
     _no_edge_selected_combination,
@@ -29,26 +28,6 @@ def test_minimal_times_statuses_len():
 
 def test_get_initial_times_statuses():
     assert get_initial_times_statuses() == ["not_selected"] * 49
-
-
-@pytest.mark.parametrize(
-    "duration_multiplier,expected_result",
-    [
-        (720, 3),
-        (480, 4),
-        (360, 5),
-        (240, 7),
-        (120, 13),
-        (60, 25),
-        (30, 49),
-        (20, 73),
-        (15, 97),
-        (10, 145),
-        (5, 289),
-    ],
-)
-def test__get_times_statuses_len(duration_multiplier, expected_result):
-    assert _get_times_statuses_len(duration_multiplier) == expected_result
 
 
 @pytest.mark.parametrize(
