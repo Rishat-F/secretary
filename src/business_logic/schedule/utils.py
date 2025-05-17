@@ -1,8 +1,12 @@
 from calendar import Calendar
-from datetime import datetime
+from datetime import datetime, time
 
+from src.constraints import DURATION_MULTIPLIER
 from src.keyboards import InlineButton
 from src.utils import months
+
+
+MINIMAL_ALL_TIMES_LEN = 3
 
 
 def get_schedule_times(slots_datetimes: list[datetime]) -> list[str]:
@@ -118,6 +122,84 @@ def view_schedule_get_days_keyboard_buttons(
     return result
 
 
+def get_all_times_len(duration_multiplier: int) -> int:
+    all_times_len = (24 * 60) // duration_multiplier + 1
+    return all_times_len
+
+
+def _get_all_times(duration_multiplier: int) -> list[str]:
+    all_times = []
+    total_minutes = 0
+    all_times_len = get_all_times_len(duration_multiplier)
+    for _ in range(all_times_len):
+        hours = (total_minutes // 60) % 24
+        minutes = total_minutes % 60
+        time_ = time(hours, minutes)
+        all_times.append(time_.isoformat(timespec="minutes"))
+        total_minutes += duration_multiplier
+    return all_times
+
+
+def _get_schedule_times_from_to(
+    schedule_times: list[str],
+    duration_multiplier: int,
+) -> list[str]:
+    assert schedule_times
+    schedule_times = sorted(schedule_times)
+    schedule_times_from_to = []
+    for i in range(len(schedule_times)):
+        current_element = schedule_times[i]
+        schedule_times_from_to.append(current_element)
+        try:
+            next_element = schedule_times[i+1]
+        except IndexError:
+            next_element = None
+        current_element_time = time.fromisoformat(current_element)
+        current_element_total_minutes = current_element_time.hour * 60 + current_element_time.minute
+        if next_element is None:
+            total_minutes = current_element_total_minutes + duration_multiplier
+            hours = (total_minutes // 60) % 24
+            minutes = total_minutes % 60
+            time_ = time(hours, minutes)
+            schedule_times_from_to.append(time_.isoformat(timespec="minutes"))
+        else:
+            next_element_time = time.fromisoformat(next_element)
+            next_element_total_minutes = next_element_time.hour * 60 + next_element_time.minute
+            if (next_element_total_minutes - current_element_total_minutes) != duration_multiplier:
+                total_minutes = current_element_total_minutes + duration_multiplier
+                hours = (total_minutes // 60) % 24
+                minutes = total_minutes % 60
+                time_ = time(hours, minutes)
+                schedule_times_from_to.append(time_.isoformat(timespec="minutes"))
+    return schedule_times_from_to
+
+
+def _get_times_buttons_for_view_schedule(
+    all_times: list[str],
+    schedule_times_from_to: list[str],
+) -> list[InlineButton]:
+    assert len(all_times) >= MINIMAL_ALL_TIMES_LEN
+    assert all_times[0] == "00:00"
+    assert all_times[-1] == "00:00"
+    assert schedule_times_from_to
+    times_buttons = []
+    if schedule_times_from_to[0] == "00:00":
+        times_buttons.append(InlineButton("ignore", "00:00", "00:00"))
+    else:
+        times_buttons.append(InlineButton("ignore", " ", "00:00"))
+    for time_ in all_times[1:-1]:
+        if time_ in schedule_times_from_to:
+            text = time_
+        else:
+            text = " "
+        times_buttons.append(InlineButton("ignore", text, time_))
+    if schedule_times_from_to[-1] == "00:00":
+        times_buttons.append(InlineButton("ignore", "00:00", "00:00"))
+    else:
+        times_buttons.append(InlineButton("ignore", " ", "00:00"))
+    return times_buttons
+
+
 def view_schedule_get_times_keyboard_buttons(
     schedule: dict[int, dict[int, dict[int, list[str]]]],
     now_: datetime,
@@ -138,16 +220,18 @@ def view_schedule_get_times_keyboard_buttons(
     assert chosen_day in schedule[chosen_year][chosen_month]
     current_time = now_.time().isoformat(timespec="minutes")
     if chosen_year == current_year and chosen_month == current_month and chosen_day == current_day:
-        available_times = [
+        schedule_times = [
             time_ for time_ in schedule[chosen_year][chosen_month][chosen_day]
             if time_ > current_time
         ]
     else:
-        available_times = [time_ for time_ in schedule[chosen_year][chosen_month][chosen_day]]
+        schedule_times = [time_ for time_ in schedule[chosen_year][chosen_month][chosen_day]]
+    all_times = _get_all_times(DURATION_MULTIPLIER)
     result = []
     result.append(InlineButton("view_schedule", str(chosen_day), str(chosen_day)))
     result.append(InlineButton("choose_month", str(months[chosen_month]), str(chosen_month)))
     result.append(InlineButton("choose_year", str(chosen_year), str(chosen_year)))
-    for time_ in available_times:
-        result.append(InlineButton("ignore", time_, time_))
+    schedule_times_from_to = _get_schedule_times_from_to(schedule_times, DURATION_MULTIPLIER)
+    times_buttons = _get_times_buttons_for_view_schedule(all_times, schedule_times_from_to)
+    result.extend(times_buttons)
     return result
