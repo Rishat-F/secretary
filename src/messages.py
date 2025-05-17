@@ -78,7 +78,6 @@ NEW_APPOINTMENT_CREATED = "Новая запись на прием!\n\n{appointm
 
 NO_SCHEDULE = "График работы не задан"
 SCHEDULE_VIEW = "Просмотр графика работы"
-CANNOT_SHOW_WORKING_HOURS = "Не удается отобразить часы работы"
 SELECT_WORKING_DATES = "Выберите рабочие даты"
 SELECT_WORKING_HOURS = "Выберите рабочие часы"
 HOW_TO_MODIFY_SCHEDULE = (
