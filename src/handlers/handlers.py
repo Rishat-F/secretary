@@ -992,7 +992,6 @@ async def clear_schedule_confirmed(
     async with async_session() as session:
         await delete_not_booked_future_slots(session, utc_now)
         await session.commit()
-    await callback.message.answer(messages.SCHEDULE_CLEARED)
     await callback.answer(messages.SCHEDULE_CLEARED, show_alert=True)
     await go_to_choose_day_while_view_schedule(callback, callback_data, state, async_session)
 
