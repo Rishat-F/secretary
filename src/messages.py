@@ -76,6 +76,7 @@ APPOINTMENT_SAVED = "Запись прошла успешно!"
 COME = "Приходите:\n\n{appointment_view}"
 NEW_APPOINTMENT_CREATED = "Новая запись на прием!\n\n{appointment_view}"
 
+SCHEDULE = "График работы"
 NO_SCHEDULE = "График работы не задан"
 SCHEDULE_VIEW = "Просмотр графика работы"
 SELECT_WORKING_DATES = "Выберите рабочие даты"

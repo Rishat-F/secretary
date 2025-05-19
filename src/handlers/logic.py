@@ -708,7 +708,7 @@ async def schedule_logic(
     data_to_set = {"schedule_dict": schedule_dict}
     messages_to_answer = [
         MessageToAnswer(
-            messages.SCHEDULE_VIEW,
+            messages.SCHEDULE,
             types.ReplyKeyboardRemove(),
         ),
     ]
@@ -730,14 +730,10 @@ async def schedule_logic(
             chosen_year,
             chosen_month,
         )
-        messages_to_answer = [
-            MessageToAnswer(
-                messages.SCHEDULE_VIEW,
-                types.ReplyKeyboardRemove(),
-            ),
+        messages_to_answer.append(
             MessageToAnswer(
                 messages.SCHEDULE_VIEW,
                 view_schedule_get_days_keyboard(chosen_year, chosen_month, days_to_choose),
-            ),
-        ]
+            )
+        )
         return _get_logic_result(messages_to_answer, state_to_set, data_to_set)
