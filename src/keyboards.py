@@ -45,13 +45,15 @@ class InlineButton(NamedTuple):
     value: str
 
 
-main_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
+def get_main_keyboard(for_admin: bool) -> ReplyKeyboardMarkup:
+    keyboard_=[
         [KeyboardButton(text=USLUGI), KeyboardButton(text=ZAPISI)],
-        [KeyboardButton(text=SCHEDULE)],
-    ],
-    resize_keyboard=True,
-)
+    ]
+    if for_admin:
+        keyboard_.append([KeyboardButton(text=SCHEDULE)])
+    keyboard = ReplyKeyboardMarkup(keyboard=keyboard_, resize_keyboard=True)
+    return keyboard
+
 
 services_keyboard = ReplyKeyboardMarkup(
     keyboard=[
