@@ -38,8 +38,8 @@ from src.keyboards import (
     ZAPIS_NA_PRIEM,
     AppointmentDateTimePicker,
     back_main_keyboard,
+    get_main_keyboard,
     get_services_to_update_keyboard,
-    main_keyboard,
     make_appointment_get_days_keyboard,
     set_service_new_field_keyboard,
     service_fields_keyboard,
@@ -107,7 +107,11 @@ def _get_logic_result(
     return logic_result
 
 
-def _to_main_menu_result(message_to_send: str = messages.MAIN_MENU) -> LogicResult:
+def _to_main_menu_result(
+    message_to_send: str = messages.MAIN_MENU,
+    is_admin: bool = True,
+) -> LogicResult:
+    main_keyboard = get_main_keyboard(is_admin)
     messages_to_answer = [ MessageToAnswer(message_to_send, main_keyboard) ]
     return _get_logic_result(messages_to_answer, clear_state=True)
 
@@ -129,6 +133,7 @@ async def services_logic(user_id: int, session: AsyncSession) -> LogicResult:
         return _get_logic_result(messages_to_answer, state_to_set)
     else:
         services = await get_services(session)
+        main_keyboard = get_main_keyboard(for_admin=False)
         message_to_send = _show_services(services, main_keyboard, show_duration=False)
         messages_to_answer = [message_to_send]
         return _get_logic_result(messages_to_answer)
@@ -571,6 +576,7 @@ async def appointments_logic(user_id: int, session: AsyncSession) -> LogicResult
     if user_id == ADMIN_TG_ID:
         appointments = await get_active_appointments(session)
         text = form_appointments_list_text(appointments, for_admin=True)
+        main_keyboard = get_main_keyboard(for_admin=True)
         messages_to_answer = [ MessageToAnswer(text, main_keyboard) ]
         return _get_logic_result(messages_to_answer)
     else:
@@ -587,7 +593,7 @@ async def choose_appointments_action_logic(
     text = user_input.strip()
     upper_text = text.upper()
     if upper_text == BACK.upper():
-        return _to_main_menu_result()
+        return _to_main_menu_result(is_admin=False)
     elif upper_text == ZAPIS_NA_PRIEM.upper():
         services = await get_services(session)
         if not services:
@@ -623,7 +629,7 @@ async def choose_service_for_appointment_logic(
         state_to_set = MakeAppointment.choose_action
         return _get_logic_result(messages_to_answer, state_to_set)
     elif upper_text == MAIN_MENU.upper():
-        return _to_main_menu_result()
+        return _to_main_menu_result(is_admin=False)
     else:
         services_for_appointment = state_data["services_for_appointment"]
         pos_for_appointment = text

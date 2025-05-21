@@ -214,6 +214,7 @@ def register_handlers(dp: Dispatcher) -> None:
     )
     dp.message.register(
         schedule,
+        F.chat.id == ADMIN_TG_ID,
         F.chat.type == ChatType.PRIVATE.value,
         F.text.lower() == SCHEDULE.lower(),
     )

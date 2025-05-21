@@ -92,7 +92,7 @@ from src.keyboards import (
     appointments_keyboard,
     get_confirm_appointment_keyboard,
     get_confirm_clear_schedule_keyboard,
-    main_keyboard,
+    get_main_keyboard,
     AppointmentDateTimePicker,
     make_appointment_get_days_keyboard,
     make_appointment_get_months_keyboard,
@@ -144,6 +144,12 @@ async def _process_logic_return(
 
 
 async def start_bot(message: types.Message):
+    if message.from_user is None:
+        return None
+    if message.from_user.id == ADMIN_TG_ID:
+        main_keyboard = get_main_keyboard(for_admin=True)
+    else:
+        main_keyboard = get_main_keyboard(for_admin=False)
     await message.answer(messages.GREETING, reply_markup=main_keyboard)
 
 
@@ -649,7 +655,7 @@ async def go_to_main_menu_from_schedule(
     await callback.message.delete()
     await callback.message.answer(
         text=messages.MAIN_MENU,
-        reply_markup=main_keyboard,
+        reply_markup=get_main_keyboard(for_admin=True),
     )
     await state.clear()
     await callback.answer()
