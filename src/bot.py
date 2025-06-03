@@ -11,9 +11,13 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
+from src.stuff.appointments.router import router as appointments_router
+from src.stuff.common.router import router as common_router
+from src.stuff.main_menu.router import router as main_menu_router
+from src.stuff.schedule.router import router as schedule_router
+from src.stuff.services.router import router as services_router
 from src.config import db_url
 from src.models import Base
-from src.handlers.register_handlers import register_handlers
 
 logging.basicConfig(level=logging.INFO)
 
@@ -42,7 +46,13 @@ async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(engine=engine, async_session=async_session)
     dp.startup.register(on_bot_start)
-    register_handlers(dp)
+    dp.include_routers(
+        appointments_router,
+        common_router,
+        main_menu_router,
+        schedule_router,
+        services_router,
+    )
     await bot.delete_webhook(drop_pending_updates=True)
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
