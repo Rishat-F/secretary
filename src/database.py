@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 from src.models import Appointment, Reservation, Service, Slot
-from src.utils import get_utc_now
 
 
 async def get_services(
@@ -58,6 +57,7 @@ async def delete_service(session: AsyncSession, name: str) -> None:
 
 async def get_active_appointments(
     session: AsyncSession,
+    utc_now: datetime,
     filter_by: dict | None = None,
 ) -> list[Appointment]:
     if filter_by is None:
@@ -65,7 +65,7 @@ async def get_active_appointments(
     query = (
         select(Appointment)
         .filter_by(**filter_by)
-        .where(Appointment.starts_at > get_utc_now())
+        .where(Appointment.starts_at > utc_now)
         .order_by(Appointment.starts_at)
     )
     result = await session.execute(query)
