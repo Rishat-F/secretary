@@ -1,13 +1,10 @@
 from aiogram import types
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.business_logic.schedule.get_schedule import get_schedule
-from src.business_logic.schedule.utils import view_schedule_get_days_keyboard_buttons
 from src import messages
 from src.config import TIMEZONE
 from src.database import get_future_slots, get_services, get_active_appointments
 from src.secrets import ADMIN_TG_ID
-
 from src.stuff.appointments.keyboards import appointments_keyboard
 from src.stuff.appointments.states import MakeAppointment
 from src.stuff.common.logic import LogicResult, MessageToAnswer, get_logic_result, show_services
@@ -20,6 +17,7 @@ from src.stuff.common.utils import (
 from src.stuff.main_menu.keyboards import get_main_keyboard
 from src.stuff.schedule.keyboards import view_schedule_get_days_keyboard
 from src.stuff.schedule.states import ScheduleStates
+from src.stuff.schedule.utils import get_schedule, view_schedule_get_days_keyboard_buttons
 from src.stuff.services.keyboards import services_keyboard
 from src.stuff.services.states import ServicesActions
 

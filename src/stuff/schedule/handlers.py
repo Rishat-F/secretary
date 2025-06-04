@@ -17,7 +17,7 @@ from src.database import (
 )
 from src.models import Slot
 from src.stuff.common.utils import (
-    date_to_lang,
+    dates_to_lang,
     from_utc,
     get_utc_now,
     get_years_with_months,
@@ -517,7 +517,7 @@ async def show_working_hours(
     chosen_year = callback_data.year
     chosen_month = callback_data.month
     chosen_day = callback_data.day
-    date_lang = date_to_lang(chosen_year, chosen_month, chosen_day)
+    date_lang = dates_to_lang(chosen_year, chosen_month, chosen_day)
     iso_working_hours = schedule_dict[chosen_year][chosen_month][chosen_day]
     working_hours_view = get_working_hours_view(iso_working_hours, DURATION_MULTIPLIER)
     text = f"{date_lang}\n\n{working_hours_view}"

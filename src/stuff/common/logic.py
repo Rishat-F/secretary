@@ -7,7 +7,7 @@ from aiogram.fsm.state import State
 from src import messages
 from src.models import Service
 from src.stuff.appointments.keyboards import AppointmentDateTimePicker
-from src.stuff.common.utils import date_to_lang, form_services_list_text
+from src.stuff.common.utils import dates_to_lang, form_services_list_text
 from src.stuff.main_menu.keyboards import get_main_keyboard
 from src.stuff.schedule.keyboards import Schedule
 
@@ -81,12 +81,26 @@ def alert_not_available_to_choose_logic(
     year = callback_data.year
     month = callback_data.month
     day = callback_data.day
-    lang_date = date_to_lang(year, month, day)
     if isinstance(callback_data, AppointmentDateTimePicker):
+        week = None
+        day_of_week = None
         for_what = "для записи"
     else:
+        week = callback_data.week
+        day_of_week = callback_data.day_of_week
         for_what = "для задания графика работы"
-    if year and month and callback_data.day:
+    lang_date = dates_to_lang(year, month, day, week, day_of_week)
+    if week:
+        alert_text = messages.WEEK_NOT_AVAILABLE.format(
+            lang_week_month_year=lang_date,
+            for_what=for_what,
+        )
+    elif day_of_week:
+        alert_text = messages.DAY_OF_WEEK_NOT_AVAILABLE.format(
+            lang_day_of_week_month_year=lang_date,
+            for_what=for_what,
+        )
+    elif year and month and callback_data.day:
         alert_text = messages.DAY_NOT_AVAILABLE.format(
             lang_day_month_year=lang_date,
             for_what=for_what,

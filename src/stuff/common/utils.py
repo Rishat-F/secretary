@@ -141,14 +141,32 @@ months = {
 months_swapped = {value: key for key, value in months.items()}
 
 
-def date_to_lang(year: int | None, month: int | None = None, day: int | None = None) -> str:
+def dates_to_lang(
+    year: int | None,
+    month: int | None = None,
+    day: int | None = None,
+    week: int | None = None,
+    day_of_week: int | None = None,
+) -> str:
     """
     Текстовое представление даты (как мы говорим).
 
     get_lang_date(2020) -> "2020 год"
     get_lang_date(2020, 4) -> "Апрель 2020 года"
     get_lang_date(2020, 4, 22) -> "22 апреля 2020 года"
+    get_lang_date(2020, 4, 22, 3) -> "3я неделя апреля 2020 года"
+    get_lang_date(2020, 4, 22, 3, 5) -> "Пятницы апреля 2020 года"
     """
+    if week:
+        assert year
+        assert month
+        assert not day
+        assert not day_of_week
+    if day_of_week:
+        assert year
+        assert month
+        assert not day
+        assert not week
     lang_date = ""
     if year and month and day:
         month_name = months[month]
@@ -158,8 +176,28 @@ def date_to_lang(year: int | None, month: int | None = None, day: int | None = N
             month_name_genitive = month_name[:-1] + "я"
         lang_date = f"{day} {month_name_genitive.lower()} {year} года"
     elif year and month:
-        month_name = months[month]
-        lang_date = f"{month_name} {year} года"
+        if week or day_of_week:
+            month_name = months[month]
+            if month_name.endswith("т"):
+                month_name_genitive = month_name + "а"
+            else:
+                month_name_genitive = month_name[:-1] + "я"
+            if week:
+                lang_date = f"{week}я неделя {month_name_genitive.lower()} {year} года"
+            elif day_of_week:
+                days_of_week_plural = {
+                    1: "Понедельники",
+                    2: "Вторники",
+                    3: "Среды",
+                    4: "Четверги",
+                    5: "Пятницы",
+                    6: "Субботы",
+                    7: "Воскресенья",
+                }
+                lang_date = f"{days_of_week_plural[day_of_week]} {month_name_genitive.lower()} {year} года"
+        else:
+            month_name = months[month]
+            lang_date = f"{month_name} {year} года"
     elif year:
         lang_date = f"{year} год"
     return lang_date

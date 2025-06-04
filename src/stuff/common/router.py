@@ -6,6 +6,7 @@ from src.stuff.appointments.states import MakeAppointment
 from src.stuff.common.handlers import alert_not_available_to_choose, ignore_inline_button
 from src.stuff.schedule.keyboards import Schedule
 from src.stuff.schedule.states import ScheduleStates
+from src.stuff.schedule.utils import ScheduleDayStatus
 
 
 router = Router()
@@ -23,10 +24,11 @@ router.callback_query.register(
         MakeAppointment.choose_year,
         MakeAppointment.choose_month,
         MakeAppointment.choose_day,
+        ScheduleStates.choose_month,
         ScheduleStates.set_working_days,
     ),
     or_f(
         AppointmentDateTimePicker.filter(F.action == "not_available"),
-        Schedule.filter(F.action == "not_available"),
+        Schedule.filter(F.action == ScheduleDayStatus.NOT_AVAILABLE),
     ),
 )
