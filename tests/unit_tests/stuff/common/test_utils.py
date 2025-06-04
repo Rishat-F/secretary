@@ -4,7 +4,7 @@ import pytest
 import pytz
 
 from src.stuff.common.utils import (
-    date_to_lang,
+    dates_to_lang,
     from_utc,
     get_years_with_months,
     get_years_with_months_days,
@@ -15,16 +15,18 @@ from src.stuff.common.utils import (
 
 
 @pytest.mark.parametrize(
-    "year,month,day,expected_result",
+    "year,month,day,week,day_of_week,expected_result",
     [
-        (2020, None, None, "2020 год"),
-        (2020, 6, None, "Июнь 2020 года"),
-        (2020, 6, 20, "20 июня 2020 года"),
-        (2020, 3, 20, "20 марта 2020 года"),
+        (2020, None, None, None, None, "2020 год"),
+        (2020, 6, None, None, None, "Июнь 2020 года"),
+        (2020, 6, 20, None, None, "20 июня 2020 года"),
+        (2020, 3, 20, None, None, "20 марта 2020 года"),
+        (2020, 3, None, 2, None, "2я неделя марта 2020 года"),
+        (2020, 3, None, None, 3, "Среды марта 2020 года"),
     ],
 )
-def test_date_to_lang(year, month, day, expected_result):
-    assert date_to_lang(year, month, day) == expected_result
+def test_dates_to_lang(year, month, day, week, day_of_week, expected_result):
+    assert dates_to_lang(year, month, day, week, day_of_week) == expected_result
 
 
 @pytest.mark.parametrize(

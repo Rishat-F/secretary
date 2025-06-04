@@ -20,6 +20,8 @@ class Schedule(CallbackData, prefix="schedule", sep="$"):
     year: int | None = None
     month: int | None = None
     day: int | None = None
+    week: int | None = None
+    day_of_week: int | None = None
     time: str | None = None
     index: int | None = None
 
@@ -127,13 +129,44 @@ def set_schedule_get_days_keyboard(
         text=str(chosen_year),
         callback_data=Schedule(action="choose_year"),
     )
+    day_counter = 1
+    week_counter = 1
     for button in days_keyboard_buttons:
+        if button.text == "✖️":
+            chosen_day = day_counter
+            day_counter += 1
+        else:
+            chosen_day = None
+        if button.text == "➞":
+            chosen_week = week_counter
+            week_counter += 1
+        else:
+            chosen_week = None
+        if button.text == "Пн":
+            chosen_day_of_week = 1
+        elif button.text == "Вт":
+            chosen_day_of_week = 2
+        elif button.text == "Ср":
+            chosen_day_of_week = 3
+        elif button.text == "Чт":
+            chosen_day_of_week = 4
+        elif button.text == "Пт":
+            chosen_day_of_week = 5
+        elif button.text == "Сб":
+            chosen_day_of_week = 6
+        elif button.text == "Вс":
+            chosen_day_of_week = 7
+        else:
+            chosen_day_of_week = None
         builder.button(
             text=button.text,
             callback_data=Schedule(
                 action=button.action,
                 year=chosen_year,
                 month=chosen_month,
+                day=chosen_day,
+                week=chosen_week,
+                day_of_week=chosen_day_of_week,
                 index=int(button.value),
             ),
         )

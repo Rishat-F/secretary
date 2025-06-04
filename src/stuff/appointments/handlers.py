@@ -41,7 +41,7 @@ from src.stuff.appointments.utils import (
 )
 from src.stuff.common.handlers import process_logic_return
 from src.stuff.common.utils import (
-    date_to_lang,
+    dates_to_lang,
     form_appointment_view,
     from_utc,
     get_utc_now,
@@ -211,7 +211,7 @@ async def go_to_confirm_appointment(
     await state.set_state(MakeAppointment.confirm)
     await callback.message.edit_text(
         text=messages.CONFIRM_APPOINTMENT.format(
-            lang_day_month_year=date_to_lang(chosen_year, chosen_month, chosen_day),
+            lang_day_month_year=dates_to_lang(chosen_year, chosen_month, chosen_day),
             time=chosen_time.isoformat(timespec="minutes"),
             service_name=chosen_service_name,
         ),

@@ -62,6 +62,8 @@ DAY_NOT_AVAILABLE = "{lang_day_month_year} недоступно {for_what}"
 DAY_BECOME_NOT_AVAILABLE = "{lang_day_month_year} стало недоступно для записи"
 CHOOSE_TIME = "Выберите время, на которое хотите записаться"
 TIME_BECOME_NOT_AVAILABLE = "Время {time} стало недоступно для записи"
+WEEK_NOT_AVAILABLE = "{lang_week_month_year} недоступна {for_what}"
+DAY_OF_WEEK_NOT_AVAILABLE = "{lang_day_of_week_month_year} недоступны {for_what}"
 CANCELED = "Отменено"
 CONFIRM_APPOINTMENT = (
     "Подтвердите запись на прием\n\n"

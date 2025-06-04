@@ -780,7 +780,7 @@ def set_schedule_get_months_keyboard_buttons(
     if chosen_year == current_year:
         for month_num, month_name in months.items():
             if month_num < current_month:
-                result.append(InlineButton("not_available", "✖️", str(month_num)))
+                result.append(InlineButton("not_available_", "✖️", str(month_num)))
             elif month_num == current_month:
                 result.append(InlineButton("choose_day", f"[ {month_name} ]", str(month_num)))
             else:

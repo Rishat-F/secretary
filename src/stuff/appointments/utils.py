@@ -12,7 +12,7 @@ from src.stuff.appointments.exceptions import (
     YearBecomeNotAvailable,
 )
 from src.stuff.common.keyboards import InlineButton
-from src.stuff.common.utils import date_to_lang, from_utc, months
+from src.stuff.common.utils import dates_to_lang, from_utc, months
 
 
 def get_years_keyboard_buttons(
@@ -209,18 +209,18 @@ def check_chosen_datetime_is_possible(
     """Вызывает исключение если дата и время недоступно для записи, иначе возвращает None."""
     if datetime_.year not in slots:
         raise YearBecomeNotAvailable(
-            messages.YEAR_BECOME_NOT_AVAILABLE.format(lang_year=date_to_lang(datetime_.year)),
+            messages.YEAR_BECOME_NOT_AVAILABLE.format(lang_year=dates_to_lang(datetime_.year)),
         )
     elif datetime_.month not in slots[datetime_.year]:
         raise MonthBecomeNotAvailable(
             messages.MONTH_BECOME_NOT_AVAILABLE.format(
-                lang_month_year=date_to_lang(datetime_.year, datetime_.month),
+                lang_month_year=dates_to_lang(datetime_.year, datetime_.month),
             ),
         )
     elif datetime_.day not in slots[datetime_.year][datetime_.month]:
         raise DayBecomeNotAvailable(
             messages.DAY_BECOME_NOT_AVAILABLE.format(
-                lang_day_month_year=date_to_lang(datetime_.year, datetime_.month, datetime_.day),
+                lang_day_month_year=dates_to_lang(datetime_.year, datetime_.month, datetime_.day),
             ),
         )
     elif datetime_.time().isoformat(timespec="minutes") not in slots[datetime_.year][datetime_.month][datetime_.day]:
