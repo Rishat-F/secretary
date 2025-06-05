@@ -48,10 +48,10 @@ async def main() -> None:
     dp.startup.register(on_bot_start)
     dp.include_routers(
         appointments_router,
-        common_router,
         main_menu_router,
         schedule_router,
         services_router,
+        common_router,  # данный роутер должен подключаться последним!
     )
     await bot.delete_webhook(drop_pending_updates=True)
     try:

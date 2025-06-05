@@ -1,10 +1,18 @@
 from typing import Any, Union
 
 from aiogram import Bot, types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
+from src import messages
+from src.secrets import ADMIN_TG_ID
 from src.stuff.appointments.keyboards import AppointmentDateTimePicker
-from src.stuff.common.logic import LogicResult, alert_not_available_to_choose_logic
+from src.stuff.common.logic import (
+    LogicResult,
+    alert_not_available_to_choose_logic,
+    to_main_menu_result,
+)
+from src.stuff.main_menu.keyboards import get_main_keyboard
 from src.stuff.schedule.keyboards import Schedule
 
 
@@ -42,4 +50,38 @@ async def alert_not_available_to_choose(
 
 
 async def ignore_inline_button(callback: types.CallbackQuery) -> None:
+    await callback.answer()
+
+
+async def emergency_returning_to_main_menu_from_reply_mode(
+    message: types.Message,
+    state: FSMContext,
+) -> None:
+    if message.from_user is None:
+        return None
+    is_admin = (message.from_user.id == ADMIN_TG_ID)
+    result = to_main_menu_result(
+        messages.SOMETHING_GONE_WRONG_TRY_FROM_BEGINNING,
+        is_admin=is_admin,
+    )
+    await process_logic_return(result, fsm_context=state, message=message)
+
+
+async def emergency_returning_to_main_menu_from_inline_mode(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+) -> None:
+    if not callback.message:
+        return None
+    for_admin = (callback.from_user.id == ADMIN_TG_ID)
+    main_keyboard = get_main_keyboard(for_admin=for_admin)
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:  # давние сообщения удалять нельзя
+        pass
+    await callback.message.answer(
+        text=messages.SOMETHING_GONE_WRONG_TRY_FROM_BEGINNING,
+        reply_markup=main_keyboard,
+    )
+    await state.clear()
     await callback.answer()
