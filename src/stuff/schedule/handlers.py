@@ -70,7 +70,10 @@ async def go_to_main_menu_from_schedule(
 ) -> None:
     if not callback.message:
         return None
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:  # давние сообщения удалять нельзя
+        pass
     await callback.message.answer(
         text=messages.MAIN_MENU,
         reply_markup=get_main_keyboard(for_admin=True),
@@ -101,7 +104,10 @@ async def schedule_modifying(
             "times_statuses": times_statuses,
         }
     )
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:  # давние сообщения удалять нельзя
+        pass
     await callback.message.answer(
         text=messages.HOW_TO_MODIFY_SCHEDULE.format(
             save_button=SAVE,
