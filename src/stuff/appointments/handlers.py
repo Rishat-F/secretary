@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 
 from aiogram import types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -269,7 +270,10 @@ async def appointment_confirmed(
             if not times_dict:
                 await state.set_data({})
                 await state.set_state(MakeAppointment.choose_action)
-                await callback.message.delete()
+                try:
+                    await callback.message.delete()
+                except TelegramBadRequest:  # давние сообщения удалять нельзя
+                    pass
                 await callback.message.answer(
                     text=messages.NO_POSSIBLE_TIMES_FOR_SERVICE,
                     reply_markup=appointments_keyboard,
@@ -330,7 +334,10 @@ async def appointment_confirmed(
                 await callback.message.edit_text(text=message_to_edit_to, reply_markup=keyboard_to_show)
                 await callback.answer(str(err), show_alert=True)
         else:
-            await callback.message.delete()
+            try:
+                await callback.message.delete()
+            except TelegramBadRequest:  # давние сообщения удалять нельзя
+                pass
             await session.refresh(appointment)
             await callback.message.answer(
                 text=(
@@ -357,7 +364,10 @@ async def cancel_choose_date_for_appointment(
 ) -> None:
     if not callback.message:
         return None
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:  # давние сообщения удалять нельзя
+        pass
     await callback.message.answer(
         text=messages.CANCELED,
         reply_markup=appointments_keyboard,
