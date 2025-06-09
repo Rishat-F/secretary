@@ -22,6 +22,12 @@ from src.stuff.services.keyboards import services_keyboard
 from src.stuff.services.states import ServicesActions
 
 
+def start_bot_logic(is_admin: bool):
+    main_keyboard = get_main_keyboard(for_admin=is_admin)
+    messages_to_answer = [ MessageToAnswer(messages.GREETING, main_keyboard) ]
+    return get_logic_result(messages_to_answer)
+
+
 async def services_logic(user_id: int, session: AsyncSession) -> LogicResult:
     if user_id == ADMIN_TG_ID:
         messages_to_answer = [ MessageToAnswer(messages.CHOOSE_ACTION, services_keyboard) ]

@@ -13,14 +13,12 @@ from src.stuff.main_menu.logic import (
 )
 
 
-async def start_bot(message: types.Message):
+async def start_bot(message: types.Message, state: FSMContext) -> None:
     if message.from_user is None:
         return None
-    if message.from_user.id == ADMIN_TG_ID:
-        main_keyboard = get_main_keyboard(for_admin=True)
-    else:
-        main_keyboard = get_main_keyboard(for_admin=False)
-    await message.answer(messages.GREETING, reply_markup=main_keyboard)
+    is_admin = (message.from_user.id == ADMIN_TG_ID)
+    result = start_bot_logic(is_admin)
+    await process_logic_return(result, fsm_context=state, message=message)
 
 
 async def services(
