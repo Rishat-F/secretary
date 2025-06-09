@@ -2,6 +2,7 @@ from aiogram import Bot, types
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.stuff.appointments.keyboards import AppointmentDateTimePicker
 from src.stuff.appointments.logic import (
     appointment_confirmed_logic,
     cancel_choose_date_for_appointment_logic,
@@ -13,7 +14,6 @@ from src.stuff.appointments.logic import (
     go_to_choose_year_for_appointment_logic,
     go_to_confirm_appointment_logic,
 )
-from src.stuff.appointments.keyboards import AppointmentDateTimePicker
 from src.stuff.common.handlers import process_logic_return
 
 
