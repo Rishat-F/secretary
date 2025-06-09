@@ -14,7 +14,7 @@ from src.database import (
 )
 from src.models import Appointment
 from src.secrets import ADMIN_TG_ID
-from stuff.appointments.exceptions import (
+from src.stuff.appointments.exceptions import (
     DateTimeBecomeNotAvailable,
     DayBecomeNotAvailable,
     MonthBecomeNotAvailable,

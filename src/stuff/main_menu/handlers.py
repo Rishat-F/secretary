@@ -2,14 +2,13 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src import messages
 from src.secrets import ADMIN_TG_ID
 from src.stuff.common.handlers import process_logic_return
-from src.stuff.main_menu.keyboards import get_main_keyboard
 from src.stuff.main_menu.logic import (
+    appointments_logic,
     schedule_logic,
     services_logic,
-    appointments_logic,
+    start_bot_logic,
 )
 
 
