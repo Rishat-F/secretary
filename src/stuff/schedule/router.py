@@ -12,7 +12,7 @@ from src.stuff.schedule.handlers import (
     show_working_hours,
     go_to_choose_year_for_set_schedule,
     go_to_choose_year_while_view_schedule,
-    go_to_main_menu_from_schedule,
+    go_to_main_menu,
     go_to_set_working_days,
     go_to_set_working_hours,
     save_schedule,
@@ -27,7 +27,7 @@ from src.stuff.schedule.utils import ScheduleDayStatus
 router = Router()
 
 router.callback_query.register(
-    go_to_main_menu_from_schedule,
+    go_to_main_menu,
     or_f(
         ScheduleStates.view_schedule,
         ScheduleStates.confirm_schedule_clear,

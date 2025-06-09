@@ -1,58 +1,14 @@
-from dataclasses import dataclass
 from typing import Union
 
 from aiogram import types
-from aiogram.fsm.state import State
 
 from src import messages
 from src.models import Service
 from src.stuff.appointments.keyboards import AppointmentDateTimePicker
+from src.stuff.base.logic import LogicResult, MessageToAnswer, get_logic_result
 from src.stuff.common.utils import dates_to_lang, form_services_list_text
 from src.stuff.main_menu.keyboards import get_main_keyboard
 from src.stuff.schedule.keyboards import Schedule
-
-
-@dataclass
-class MessageToAnswer:
-    text: str
-    keyboard: types.ReplyKeyboardMarkup | types.ReplyKeyboardRemove | types.InlineKeyboardMarkup
-
-
-@dataclass
-class MessageToSend:
-    user_id: int
-    text: str
-
-
-@dataclass
-class LogicResult:
-    messages_to_answer: list[MessageToAnswer]
-    state_to_set: State | None
-    data_to_set: dict | None
-    data_to_update: dict | None
-    clear_state: bool
-    messages_to_send: list[MessageToSend]
-
-
-def get_logic_result(
-    messages_to_answer: list[MessageToAnswer],
-    state_to_set: State | None = None,
-    data_to_set: dict | None = None,
-    data_to_update: dict | None = None,
-    clear_state: bool = False,
-    messages_to_send: list[MessageToSend] | None = None,
-) -> LogicResult:
-    if messages_to_send is None:
-        messages_to_send = []
-    logic_result = LogicResult(
-        messages_to_answer,
-        state_to_set,
-        data_to_set,
-        data_to_update,
-        clear_state,
-        messages_to_send,
-    )
-    return logic_result
 
 
 def to_main_menu_result(
@@ -76,7 +32,7 @@ def show_services(
 
 def alert_not_available_to_choose_logic(
     callback_data: Union[AppointmentDateTimePicker, Schedule],
-) -> str:
+) -> LogicResult:
     alert_text = ""
     year = callback_data.year
     month = callback_data.month
@@ -115,4 +71,4 @@ def alert_not_available_to_choose_logic(
             lang_year=lang_date,
             for_what=for_what,
         )
-    return alert_text
+    return get_logic_result(alert_text=alert_text)
